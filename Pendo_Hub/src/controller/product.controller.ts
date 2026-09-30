@@ -1,3 +1,4 @@
+
 import { Request, Response } from "express";
 import Product from "../model/product.model";
 
@@ -27,8 +28,8 @@ export const getProductById = async (req: Request, res: Response) => {
 
     return res.status(200).json(product);
   } catch (error) {
-    return res.status(500).json({
-      message: "Failed to get product",
+    return res.status(400).json({
+      message: "Invalid product ID",
     });
   }
 };
@@ -73,20 +74,20 @@ export const addProduct = async (req: Request, res: Response) => {
       product,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(400).json({
       message: "Failed to create product",
     });
   }
 };
 
-// Update a product
+// Update a product by ID
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       req.body,
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       }
     );
@@ -102,13 +103,13 @@ export const updateProduct = async (req: Request, res: Response) => {
       product,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(400).json({
       message: "Failed to update product",
     });
   }
 };
 
-// Delete a product
+// Delete a product by ID
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
@@ -124,7 +125,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
       product,
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(400).json({
       message: "Failed to delete product",
     });
   }
