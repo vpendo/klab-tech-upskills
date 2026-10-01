@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 
 import {
@@ -8,6 +7,7 @@ import {
   updateProduct,
   deleteProduct,
 } from "../controller/product.controller";
+import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
 
 const ProductRoute = Router();
 
@@ -15,7 +15,7 @@ const ProductRoute = Router();
  * @swagger
  * /api/products:
  *   get:
- *     summary: Get all products
+ *     summary: Get all products (public)
  *     tags: [Products]
  *     responses:
  *       200:
@@ -29,7 +29,7 @@ ProductRoute.get("/products", getProduct);
  * @swagger
  * /api/products/{id}:
  *   get:
- *     summary: Get product by ID
+ *     summary: Get product by ID (public)
  *     tags: [Products]
  *     parameters:
  *       - in: path
@@ -53,8 +53,10 @@ ProductRoute.get("/products/:id", getProductById);
  * @swagger
  * /api/products:
  *   post:
- *     summary: Create a new product
+ *     summary: Create a new product (admin only)
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -99,17 +101,28 @@ ProductRoute.get("/products/:id", getProductById);
  *         description: Product created successfully
  *       400:
  *         description: Invalid product data
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: Admin access only
  *       500:
  *         description: Server error
  */
-ProductRoute.post("/products", addProduct);
+ProductRoute.post(
+  "/products",
+  authenticate,
+  authorizeRoles("admin"),
+  addProduct,
+);
 
 /**
  * @swagger
  * /api/products/{id}:
  *   put:
- *     summary: Update a product by ID
+ *     summary: Update a product by ID (admin only)
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -153,19 +166,30 @@ ProductRoute.post("/products", addProduct);
  *         description: Product updated successfully
  *       400:
  *         description: Invalid product ID or product data
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: Admin access only
  *       404:
  *         description: Product not found
  *       500:
  *         description: Server error
  */
-ProductRoute.put("/products/:id", updateProduct);
+ProductRoute.put(
+  "/products/:id",
+  authenticate,
+  authorizeRoles("admin"),
+  updateProduct,
+);
 
 /**
  * @swagger
  * /api/products/{id}:
  *   delete:
- *     summary: Delete a product by ID
+ *     summary: Delete a product by ID (admin only)
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -177,12 +201,20 @@ ProductRoute.put("/products/:id", updateProduct);
  *         description: Product deleted successfully
  *       400:
  *         description: Invalid product ID
+ *       401:
+ *         description: Missing or invalid token
+ *       403:
+ *         description: Admin access only
  *       404:
  *         description: Product not found
  *       500:
  *         description: Server error
  */
-ProductRoute.delete("/products/:id", deleteProduct);
+ProductRoute.delete(
+  "/products/:id",
+  authenticate,
+  authorizeRoles("admin"),
+  deleteProduct,
+);
 
 export default ProductRoute;
-

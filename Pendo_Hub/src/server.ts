@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import productRouter from "./router/product.router";
+import authRouter from "./router/auth.router"; // EXTRA
 import { connectDB } from "./config/db";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger";
@@ -19,6 +20,7 @@ app.get("/", (req, res) => {
   });
 });
 
+app.use("/api/auth", authRouter); // EXTRA
 app.use("/api", productRouter);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

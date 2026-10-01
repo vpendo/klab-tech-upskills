@@ -15,6 +15,17 @@ const options: swaggerJsdoc.Options = {
         url: "http://localhost:5000",
       },
     ],
+
+    //  the Authorize button for JWT
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
   },
 
   apis: ["./src/router/*.ts"],
@@ -23,4 +34,3 @@ const options: swaggerJsdoc.Options = {
 const swaggerSpec = swaggerJsdoc(options);
 
 export default swaggerSpec;
-
