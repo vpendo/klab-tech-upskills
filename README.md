@@ -1,8 +1,6 @@
 # klab-tech-upskills
 Tech Upskill Program at kLab
-# kLab Tech Upskills
 
-Tech Upskill Program at kLab.
 
 ## Project Setup
 
@@ -22,7 +20,7 @@ Tech Upskill Program at kLab.
    JWT_SECRET=your_long_random_secret_here
 ```
 
-   <!-- EXTRA -->
+   
    Generate a secret in Git Bash:
 
 ```bash
@@ -51,10 +49,10 @@ Tech Upskill Program at kLab.
 * MongoDB
 * Mongoose
 * Swagger
-* bcrypt <!-- EXTRA -->
-* JSON Web Token (JWT) <!-- EXTRA -->
+* bcrypt 
+* JSON Web Token (JWT) 
 
-<!-- EXTRA: everything below is new -->
+
 
 ## Authentication
 
