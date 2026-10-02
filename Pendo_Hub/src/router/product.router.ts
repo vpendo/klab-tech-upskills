@@ -8,6 +8,7 @@ import {
   deleteProduct,
 } from "../controller/product.controller";
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
+import { upload } from "../middleware/uploadMiddleware"; // NEW
 
 const ProductRoute = Router();
 
@@ -53,14 +54,14 @@ ProductRoute.get("/products/:id", getProductById);
  * @swagger
  * /api/products:
  *   post:
- *     summary: Create a new product (admin only)
+ *     summary: Create a new product with an image (admin only)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -70,6 +71,7 @@ ProductRoute.get("/products/:id", getProductById);
  *               - gender
  *               - price
  *               - quantity
+ *               - image
  *             properties:
  *               name:
  *                 type: string
@@ -96,11 +98,14 @@ ProductRoute.get("/products/:id", getProductById);
  *                 type: number
  *                 minimum: 0
  *                 example: 5
+ *               image:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       201:
  *         description: Product created successfully
  *       400:
- *         description: Invalid product data
+ *         description: Invalid product data or missing image
  *       401:
  *         description: Missing or invalid token
  *       403:
@@ -112,6 +117,7 @@ ProductRoute.post(
   "/products",
   authenticate,
   authorizeRoles("admin"),
+  upload.single("image"), // NEW
   addProduct,
 );
 
@@ -119,7 +125,7 @@ ProductRoute.post(
  * @swagger
  * /api/products/{id}:
  *   put:
- *     summary: Update a product by ID (admin only)
+ *     summary: Update a product by ID, image optional (admin only)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -132,7 +138,7 @@ ProductRoute.post(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -161,6 +167,9 @@ ProductRoute.post(
  *                 type: number
  *                 minimum: 0
  *                 example: 10
+ *               image:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       200:
  *         description: Product updated successfully
@@ -179,6 +188,7 @@ ProductRoute.put(
   "/products/:id",
   authenticate,
   authorizeRoles("admin"),
+  upload.single("image"), // NEW
   updateProduct,
 );
 
@@ -186,7 +196,7 @@ ProductRoute.put(
  * @swagger
  * /api/products/{id}:
  *   delete:
- *     summary: Delete a product by ID (admin only)
+ *     summary: Delete a product and its image by ID (admin only)
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []

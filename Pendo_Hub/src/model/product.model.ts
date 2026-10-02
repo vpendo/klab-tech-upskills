@@ -7,6 +7,8 @@ export interface IProduct extends Document {
   gender: string;
   price: number;
   quantity: number;
+  imageUrl: string;        
+  imagePublicId: string;   
 }
 
 const productSchema = new Schema<IProduct>(
@@ -45,6 +47,18 @@ const productSchema = new Schema<IProduct>(
       type: Number,
       required: true,
       min: 0,
+    },
+
+    // NEW: the Cloudinary URL, used to display the image
+    imageUrl: {
+      type: String,
+      required: true,
+    },
+
+    // NEW: the Cloudinary public_id, used to delete or replace the image
+    imagePublicId: {
+      type: String,
+      required: true,
     },
   },
   {
