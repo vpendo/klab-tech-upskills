@@ -7,8 +7,9 @@ import {
   updateProduct,
   deleteProduct,
 } from "../controller/product.controller";
+
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
-import { upload } from "../middleware/uploadMiddleware"; // NEW
+import { upload } from "../middleware/uploadMiddleware";
 
 const ProductRoute = Router();
 
@@ -16,11 +17,76 @@ const ProductRoute = Router();
  * @swagger
  * /api/products:
  *   get:
- *     summary: Get all products (public)
+ *     summary: Get products with pagination, filtering, search, and sorting
  *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Number of products per page
+ *
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - Shoes
+ *             - Clothes
+ *         description: Filter products by category
+ *
+ *       - in: query
+ *         name: gender
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - Men
+ *             - Women
+ *         description: Filter products by gender
+ *
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum product price
+ *
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum product price
+ *
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search products by name or description
+ *
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum:
+ *             - price-asc
+ *             - price-desc
+ *             - newest
+ *             - oldest
+ *         description: Sort products
+ *
  *     responses:
  *       200:
- *         description: Get all products successfully
+ *         description: Products retrieved successfully
  *       500:
  *         description: Server error
  */
@@ -117,8 +183,8 @@ ProductRoute.post(
   "/products",
   authenticate,
   authorizeRoles("admin"),
-  upload.single("image"), // NEW
-  addProduct,
+  upload.single("image"),
+  addProduct
 );
 
 /**
@@ -188,8 +254,8 @@ ProductRoute.put(
   "/products/:id",
   authenticate,
   authorizeRoles("admin"),
-  upload.single("image"), // NEW
-  updateProduct,
+  upload.single("image"),
+  updateProduct
 );
 
 /**
@@ -224,7 +290,7 @@ ProductRoute.delete(
   "/products/:id",
   authenticate,
   authorizeRoles("admin"),
-  deleteProduct,
+  deleteProduct
 );
 
 export default ProductRoute;

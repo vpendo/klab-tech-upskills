@@ -7,8 +7,8 @@ export interface IProduct extends Document {
   gender: string;
   price: number;
   quantity: number;
-  imageUrl: string;        
-  imagePublicId: string;   
+  imageUrl: string;
+  imagePublicId: string;
 }
 
 const productSchema = new Schema<IProduct>(
@@ -49,13 +49,13 @@ const productSchema = new Schema<IProduct>(
       min: 0,
     },
 
-    //  the Cloudinary URL, used to display the image
+    // Cloudinary URL used to display the image
     imageUrl: {
       type: String,
       required: true,
     },
 
-    // the Cloudinary public_id, used to delete or replace the image
+    // Cloudinary public ID used to delete or replace the image
     imagePublicId: {
       type: String,
       required: true,
@@ -63,8 +63,13 @@ const productSchema = new Schema<IProduct>(
   },
   {
     timestamps: true,
-  },
+  }
 );
+
+// Indexes for faster product filtering and searching
+productSchema.index({ category: 1, gender: 1 });
+productSchema.index({ category: 1, price: 1 });
+productSchema.index({ name: "text", description: "text" });
 
 const Product = mongoose.model<IProduct>("Product", productSchema);
 
