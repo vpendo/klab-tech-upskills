@@ -6,6 +6,8 @@ import {
   addProduct,
   updateProduct,
   deleteProduct,
+  seedProducts,
+  getProductStats,
 } from "../controller/product.controller";
 
 import { authenticate, authorizeRoles } from "../middleware/auth.middleware";
@@ -17,7 +19,7 @@ const ProductRoute = Router();
  * @swagger
  * /api/products:
  *   get:
- *     summary: Get products with pagination, filtering, search, and sorting
+ *     summary: Get products with pagination, filtering, and sorting
  *     tags: [Products]
  *     parameters:
  *       - in: query
@@ -56,24 +58,6 @@ const ProductRoute = Router();
  *         description: Filter products by gender
  *
  *       - in: query
- *         name: minPrice
- *         schema:
- *           type: number
- *         description: Minimum product price
- *
- *       - in: query
- *         name: maxPrice
- *         schema:
- *           type: number
- *         description: Maximum product price
- *
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Search products by name or description
- *
- *       - in: query
  *         name: sort
  *         schema:
  *           type: string
@@ -94,9 +78,37 @@ ProductRoute.get("/products", getProduct);
 
 /**
  * @swagger
+ * /api/products/stats:
+ *   get:
+ *     summary: Get basic product statistics
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Product statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalProducts:
+ *                   type: number
+ *                   example: 4
+ *                 totalStock:
+ *                   type: number
+ *                   example: 53
+ *                 averagePrice:
+ *                   type: number
+ *                   example: 19250
+ *       500:
+ *         description: Server error
+ */
+ProductRoute.get("/products/stats", getProductStats);
+
+/**
+ * @swagger
  * /api/products/{id}:
  *   get:
- *     summary: Get product by ID (public)
+ *     summary: Get product by ID
  *     tags: [Products]
  *     parameters:
  *       - in: path
@@ -111,8 +123,6 @@ ProductRoute.get("/products", getProduct);
  *         description: Invalid product ID
  *       404:
  *         description: Product not found
- *       500:
- *         description: Server error
  */
 ProductRoute.get("/products/:id", getProductById);
 
@@ -292,5 +302,19 @@ ProductRoute.delete(
   authorizeRoles("admin"),
   deleteProduct
 );
+
+/**
+ * @swagger
+ * /api/seed:
+ *   post:
+ *     summary: Add sample products to the database
+ *     tags: [Products]
+ *     responses:
+ *       201:
+ *         description: Sample products added successfully
+ *       500:
+ *         description: Server error
+ */
+ProductRoute.post("/seed", seedProducts);
 
 export default ProductRoute;

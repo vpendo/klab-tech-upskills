@@ -21,11 +21,12 @@ const uploadToCloudinary = (buffer: Buffer): Promise<UploadApiResponse> => {
   });
 };
 
-// Get all products with pagination, filtering, search, and sorting
+// Get all products with pagination, filtering, and sorting
 export const getProduct = async (req: Request, res: Response) => {
   try {
     // Pagination
     const page = Math.max(Number(req.query.page) || 1, 1);
+
     const limit = Math.min(
       Math.max(Number(req.query.limit) || 10, 1),
       50
@@ -34,8 +35,7 @@ export const getProduct = async (req: Request, res: Response) => {
     const skip = (page - 1) * limit;
 
     // Filters
-    const { category, gender, minPrice, maxPrice, search, sort } =
-      req.query;
+    const { category, gender, sort } = req.query;
 
     const filter: any = {};
 
@@ -47,26 +47,6 @@ export const getProduct = async (req: Request, res: Response) => {
     // Filter by gender
     if (gender) {
       filter.gender = gender;
-    }
-
-    // Filter by price range
-    if (minPrice || maxPrice) {
-      filter.price = {};
-
-      if (minPrice) {
-        filter.price.$gte = Number(minPrice);
-      }
-
-      if (maxPrice) {
-        filter.price.$lte = Number(maxPrice);
-      }
-    }
-
-    // Search by product name or description
-    if (search) {
-      filter.$text = {
-        $search: search.toString(),
-      };
     }
 
     // Sorting
@@ -283,6 +263,107 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     return res.status(400).json({
       message: "Failed to delete product",
+    });
+  }
+};
+
+// Database seeding
+export const seedProducts = async (req: Request, res: Response) => {
+  try {
+    const sampleProducts = [
+      {
+        name: "Nike Running Shoes",
+        description: "Comfortable running shoes",
+        category: "Shoes",
+        gender: "Men",
+        price: 25000,
+        quantity: 10,
+        imageUrl:
+          "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+        imagePublicId: "sample-nike-shoes",
+      },
+      {
+        name: "Adidas Sneakers",
+        description: "Stylish sneakers for women",
+        category: "Shoes",
+        gender: "Women",
+        price: 30000,
+        quantity: 8,
+        imageUrl:
+          "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+        imagePublicId: "sample-adidas-shoes",
+      },
+      {
+        name: "Classic Skirt",
+        description: "Simple women's skirt",
+        category: "Clothes",
+        gender: "Women",
+        price: 10000,
+        quantity: 15,
+        imageUrl:
+          "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+        imagePublicId: "sample-skirt",
+      },
+      {
+        name: "Men T-Shirt",
+        description: "Comfortable cotton t-shirt",
+        category: "Clothes",
+        gender: "Men",
+        price: 12000,
+        quantity: 20,
+        imageUrl:
+          "https://res.cloudinary.com/demo/image/upload/sample.jpg",
+        imagePublicId: "sample-tshirt",
+      },
+    ];
+
+    const products = await Product.insertMany(sampleProducts);
+
+    return res.status(201).json({
+      message: "Sample products added successfully",
+      products,
+    });
+  } catch (error) {
+    console.error("Seed products error:", error);
+
+    return res.status(500).json({
+      message: "Failed to seed products",
+    });
+  }
+};
+
+// Product statistics using MongoDB aggregation
+export const getProductStats = async (req: Request, res: Response) => {
+  try {
+    const stats = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+          totalStock: { $sum: "$quantity" },
+          averagePrice: { $avg: "$price" },
+        },
+      },
+    ]);
+
+    if (stats.length === 0) {
+      return res.status(200).json({
+        totalProducts: 0,
+        totalStock: 0,
+        averagePrice: 0,
+      });
+    }
+
+    return res.status(200).json({
+      totalProducts: stats[0].totalProducts,
+      totalStock: stats[0].totalStock,
+      averagePrice: Math.round(stats[0].averagePrice),
+    });
+  } catch (error) {
+    console.error("Product statistics error:", error);
+
+    return res.status(500).json({
+      message: "Failed to get product statistics",
     });
   }
 };
