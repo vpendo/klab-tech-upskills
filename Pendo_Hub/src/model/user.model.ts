@@ -4,7 +4,11 @@ export interface IUser extends Document {
     name: string;
     email: string;
     password: string;
-    role: "customer" | "admin"; 
+    role: "customer" | "admin";
+
+    // Password reset fields
+    resetOTP?: string | undefined;
+    resetOTPExpires?: Date | undefined;
 }
 
 const userSchema = new Schema<IUser>(
@@ -28,11 +32,20 @@ const userSchema = new Schema<IUser>(
             required: true,
         },
 
-        
         role: {
             type: String,
             enum: ["customer", "admin"],
             default: "customer",
+        },
+
+        // Password reset OTP
+        resetOTP: {
+            type: String,
+        },
+
+        // OTP expiration time
+        resetOTPExpires: {
+            type: Date,
         },
     },
     {

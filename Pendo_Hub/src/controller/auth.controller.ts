@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../model/user.model";
+import { sendResetOTP } from "../services/email.service";
 
 // Register a new user
 export const register = async (req: Request, res: Response) => {
@@ -34,7 +35,7 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user (role is NOT taken from req.body, so it defaults to "customer")
+    // Create user
     const user = await User.create({
       name,
       email,
@@ -96,7 +97,7 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    // Create JWT token (now includes the role)
+    // Create JWT token
     const token = jwt.sign(
       {
         userId: user._id,
@@ -105,7 +106,7 @@ export const login = async (req: Request, res: Response) => {
       jwtSecret,
       {
         expiresIn: "1d",
-      },
+      }
     );
 
     return res.status(200).json({
@@ -121,6 +122,120 @@ export const login = async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(500).json({
       message: "Failed to login",
+    });
+  }
+};
+
+// Forgot password - send OTP
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Check email
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // OTP expires after 10 minutes
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    // Save OTP and expiry
+    user.resetOTP = otp;
+    user.resetOTPExpires = otpExpires;
+
+    await user.save();
+
+    // Send OTP email
+    await sendResetOTP(user.email, otp);
+
+    return res.status(200).json({
+      message: "Reset code sent to your email",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    return res.status(500).json({
+      message: "Failed to send reset code",
+    });
+  }
+};
+
+// Reset password using OTP
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    // Check required fields
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        message: "Email, OTP, and new password are required",
+      });
+    }
+
+    // Check password length
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Check OTP
+    if (user.resetOTP !== otp) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
+    }
+
+    // Check OTP expiration
+    if (!user.resetOTPExpires || user.resetOTPExpires < new Date()) {
+      return res.status(400).json({
+        message: "OTP has expired",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    user.password = hashedPassword;
+
+    // Clear OTP after successful reset
+    user.resetOTP = undefined;
+    user.resetOTPExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password reset successful",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+
+    return res.status(500).json({
+      message: "Failed to reset password",
     });
   }
 };
