@@ -7,12 +7,25 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: "Pendo Hub API",
       version: "1.0.0",
-      description: "API for Pendo Hub online shop",
+      description:
+        "REST API for Pendo Hub, an online shop for shoes and clothes for men and women.",
     },
 
     servers: [
       {
         url: process.env.API_URL || "http://localhost:5000",
+        description: "API Server",
+      },
+    ],
+
+    tags: [
+      {
+        name: "Auth",
+        description: "User authentication and password management",
+      },
+      {
+        name: "Products",
+        description: "Product management and product statistics",
       },
     ],
 
@@ -22,6 +35,7 @@ const options: swaggerJsdoc.Options = {
           type: "http",
           scheme: "bearer",
           bearerFormat: "JWT",
+          description: "Enter your JWT token",
         },
       },
     },
