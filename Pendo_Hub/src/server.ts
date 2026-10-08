@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import productRouter from "./router/product.router";
-import authRouter from "./router/auth.router"; 
+import authRouter from "./router/auth.router";
 import { connectDB } from "./config/db";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger";

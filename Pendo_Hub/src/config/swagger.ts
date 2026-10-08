@@ -12,11 +12,10 @@ const options: swaggerJsdoc.Options = {
 
     servers: [
       {
-        url: "http://localhost:5000",
+        url: process.env.API_URL || "http://localhost:5000",
       },
     ],
 
-    //  the Authorize button for JWT
     components: {
       securitySchemes: {
         bearerAuth: {
