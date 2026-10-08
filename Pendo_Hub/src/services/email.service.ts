@@ -1,32 +1,53 @@
-import { transporter } from "../config/mail";
-
 export const sendResetOTP = async (
   email: string,
   otp: string
 ): Promise<void> => {
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
-    to: email,
-    subject: "PendoHub Password Reset OTP",
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
 
-    text: `Your PendoHub password reset code is ${otp}. This code expires in 10 minutes.`,
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": process.env.EMAIL_API_KEY!,
+    },
 
-    html: `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2>PendoHub Password Reset</h2>
+    body: JSON.stringify({
+      sender: {
+        email: process.env.EMAIL_FROM!,
+        name: "PendoHub Team",
+      },
 
-        <p>You requested to reset your PendoHub password.</p>
+      to: [
+        {
+          email,
+        },
+      ],
 
-        <p>Your OTP code is:</p>
+      subject: "PendoHub Password Reset OTP",
 
-        <h1>${otp}</h1>
+      textContent: `Your PendoHub password reset code is ${otp}. This code expires in 10 minutes.`,
 
-        <p>This code expires in <strong>10 minutes</strong>.</p>
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>PendoHub Password Reset</h2>
 
-        <p>If you did not request a password reset, you can ignore this email.</p>
+          <p>You requested to reset your PendoHub password.</p>
 
-        <p>Thank you,<br>PendoHub Team</p>
-      </div>
-    `,
+          <p>Your OTP code is:</p>
+
+          <h1>${otp}</h1>
+
+          <p>This code expires in <strong>10 minutes</strong>.</p>
+
+          <p>If you did not request a password reset, you can ignore this email.</p>
+
+          <p>Thank you,<br>PendoHub Team</p>
+        </div>
+      `,
+    }),
   });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Brevo API error: ${error}`);
+  }
 };
