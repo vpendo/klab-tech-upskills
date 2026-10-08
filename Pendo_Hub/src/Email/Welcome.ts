@@ -14,18 +14,11 @@ export const welcomeEmailTemplate = (name: string) => `
   font-family: Arial, Helvetica, sans-serif;
 ">
 
-  <table
-    role="presentation"
-    width="100%"
-    cellpadding="0"
-    cellspacing="0"
-    style="padding: 40px 16px;"
-  >
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 16px;">
     <tr>
       <td align="center">
 
         <table
-          role="presentation"
           width="100%"
           cellpadding="0"
           cellspacing="0"
@@ -62,7 +55,6 @@ export const welcomeEmailTemplate = (name: string) => `
                 margin: 24px 0 10px;
                 color: #ffffff;
                 font-size: 30px;
-                line-height: 1.2;
               ">
                 Welcome, ${name}
               </h1>
@@ -78,7 +70,7 @@ export const welcomeEmailTemplate = (name: string) => `
             </td>
           </tr>
 
-          <!-- Main Content -->
+          <!-- Content -->
           <tr>
             <td style="
               padding: 38px 32px;
@@ -92,18 +84,12 @@ export const welcomeEmailTemplate = (name: string) => `
               </p>
 
               <p style="margin: 0 0 28px;">
-                Welcome to PendoHub. Your account is ready, so you can
-                discover shoes and clothing selected for everyday style.
+                Welcome to PendoHub. Your account is ready, and
+                your next find could be just a few clicks away.
               </p>
 
-              <!-- Shopping Cards -->
-              <table
-                role="presentation"
-                width="100%"
-                cellpadding="0"
-                cellspacing="0"
-                style="margin-bottom: 30px;"
-              >
+              <!-- Categories -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
                 <tr>
 
                   <td style="
@@ -114,26 +100,19 @@ export const welcomeEmailTemplate = (name: string) => `
                     vertical-align: top;
                   ">
 
-                    <div style="
-                      font-size: 25px;
-                      margin-bottom: 10px;
-                    ">
-                      👟
-                    </div>
-
                     <strong style="
                       color: #c65d0e;
-                      font-size: 15px;
+                      font-size: 16px;
                     ">
-                      Shoes
+                      SHOES
                     </strong>
 
                     <p style="
-                      margin: 6px 0 0;
+                      margin: 8px 0 0;
                       color: #57534e;
                       font-size: 13px;
                     ">
-                      Find a pair that fits your style.
+                      Find your next favorite pair.
                     </p>
 
                   </td>
@@ -148,26 +127,19 @@ export const welcomeEmailTemplate = (name: string) => `
                     vertical-align: top;
                   ">
 
-                    <div style="
-                      font-size: 25px;
-                      margin-bottom: 10px;
-                    ">
-                      👕
-                    </div>
-
                     <strong style="
                       color: #292524;
-                      font-size: 15px;
+                      font-size: 16px;
                     ">
-                      Clothing
+                      CLOTHING
                     </strong>
 
                     <p style="
-                      margin: 6px 0 0;
+                      margin: 8px 0 0;
                       color: #57534e;
                       font-size: 13px;
                     ">
-                      Explore pieces for every occasion.
+                      Discover pieces made for your style.
                     </p>
 
                   </td>
@@ -185,8 +157,7 @@ export const welcomeEmailTemplate = (name: string) => `
               </p>
 
               <p style="margin: 0;">
-                Log in anytime to explore PendoHub and find something
-                that feels right for you.
+                Log in anytime and explore what PendoHub has to offer.
               </p>
 
               <p style="
@@ -194,7 +165,6 @@ export const welcomeEmailTemplate = (name: string) => `
                 color: #57534e;
               ">
                 Happy shopping,<br />
-
                 <strong style="color: #f47b20;">
                   PendoHub Team
                 </strong>
