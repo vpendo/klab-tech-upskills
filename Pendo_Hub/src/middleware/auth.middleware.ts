@@ -1,3 +1,4 @@
+
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
@@ -7,51 +8,63 @@ export interface AuthRequest extends Request {
   user?: { userId: string; role: UserRole };
 }
 
-// Checks that the request has a valid JWT
+// Authenticate user using JWT
 export const authenticate = (
   req: AuthRequest,
   res: Response,
   next: NextFunction,
-) => {
+): void => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
-      return res.status(401).json({
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      res.status(401).json({
         message: "Authentication token is required",
       });
+      return;
     }
 
     const token = authHeader.split(" ")[1];
+    const secret = process.env.JWT_SECRET;
 
     if (!token) {
-      return res.status(401).json({
+      res.status(401).json({
         message: "Invalid authentication format",
       });
+      return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    if (!secret) {
+      res.status(500).json({
+        message: "Server configuration error",
+      });
+      return;
+    }
+
+    const decoded = jwt.verify(token, secret) as {
       userId: string;
       role: UserRole;
     };
 
     req.user = decoded;
     next();
-  } catch (error) {
-    return res.status(401).json({
+  } catch {
+    res.status(401).json({
       message: "Invalid or expired token",
     });
   }
 };
 
-// Checks that the logged-in user has one of the allowed roles
+// Authorize user roles
 export const authorizeRoles =
   (...roles: UserRole[]) =>
-  (req: AuthRequest, res: Response, next: NextFunction) => {
+  (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({
-        message: "You do not have permission to do this",
+      res.status(403).json({
+        message: "Access denied. Admins only.",
       });
+      return;
     }
+
     next();
   };
