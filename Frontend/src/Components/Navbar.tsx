@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import {
@@ -16,12 +17,6 @@ const Navbar = () => {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
 
-  const navLinks = [
-    { name: "New Arrivals", path: "/" },
-    { name: "About Us", path: "/about" },
-    { name: "Contact Us", path: "/contact" },
-  ];
-
   const linkStyle = ({ isActive }: { isActive: boolean }) =>
     `relative whitespace-nowrap py-2 text-sm font-semibold transition-colors duration-300
     after:absolute after:bottom-0 after:left-0 after:h-0.5
@@ -35,11 +30,18 @@ const Navbar = () => {
   const categoryStyle =
     "block rounded-md px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-orange-50 hover:text-orange-500";
 
+  const mobileCategoryStyle =
+    "block w-full rounded-md px-4 py-3 text-left text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-500";
+
+  const closeMobileMenu = () => {
+    setMobileCategoriesOpen(false);
+    setMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white">
       {/* Main Navbar */}
       <nav className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-4 lg:px-10">
-
         {/* Logo - Left */}
         <Link
           to="/"
@@ -50,15 +52,11 @@ const Navbar = () => {
 
         {/* Navigation Links - Center */}
         <div className="hidden items-center justify-center gap-5 whitespace-nowrap md:flex lg:gap-8">
-          <NavLink
-            to="/"
-            end
-            className={linkStyle}
-          >
+          <NavLink to="/" end className={linkStyle}>
             New Arrivals
           </NavLink>
 
-          {/* Categories Dropdown - Click to Open */}
+          {/* Desktop Categories Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -71,6 +69,7 @@ const Navbar = () => {
               }`}
             >
               Categories
+
               <ChevronDown
                 size={16}
                 className={`transition-transform duration-300 ${
@@ -80,22 +79,56 @@ const Navbar = () => {
             </button>
 
             {categoriesOpen && (
-              <div className="absolute left-0 top-full z-50 mt-2 w-44 rounded-lg border border-gray-100 bg-white p-2 shadow-lg">
-                <button
-                  type="button"
+              <div className="absolute left-0 top-full z-50 mt-2 w-52 rounded-lg border border-gray-100 bg-white p-2 shadow-lg">
+                <Link
+                  to="/shop?category=Shoes"
                   onClick={() => setCategoriesOpen(false)}
-                  className={`${categoryStyle} w-full text-left`}
+                  className={categoryStyle}
                 >
-                  Men
-                </button>
+                  All Shoes
+                </Link>
 
-                <button
-                  type="button"
+                <Link
+                  to="/shop?category=Clothes"
                   onClick={() => setCategoriesOpen(false)}
-                  className={`${categoryStyle} w-full text-left`}
+                  className={categoryStyle}
                 >
-                  Women
-                </button>
+                  All Clothes
+                </Link>
+
+                <div className="my-1 border-t border-gray-100" />
+
+                <Link
+                  to="/shop?category=Shoes&gender=Men"
+                  onClick={() => setCategoriesOpen(false)}
+                  className={categoryStyle}
+                >
+                  Men's Shoes
+                </Link>
+
+                <Link
+                  to="/shop?category=Clothes&gender=Men"
+                  onClick={() => setCategoriesOpen(false)}
+                  className={categoryStyle}
+                >
+                  Men's Clothes
+                </Link>
+
+                <Link
+                  to="/shop?category=Shoes&gender=Women"
+                  onClick={() => setCategoriesOpen(false)}
+                  className={categoryStyle}
+                >
+                  Women's Shoes
+                </Link>
+
+                <Link
+                  to="/shop?category=Clothes&gender=Women"
+                  onClick={() => setCategoriesOpen(false)}
+                  className={categoryStyle}
+                >
+                  Women's Clothes
+                </Link>
               </div>
             )}
           </div>
@@ -227,6 +260,7 @@ const Navbar = () => {
               className="flex items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
             >
               Categories
+
               <ChevronDown
                 size={16}
                 className={`transition-transform duration-300 ${
@@ -237,27 +271,55 @@ const Navbar = () => {
 
             {mobileCategoriesOpen && (
               <div className="ml-4 border-l-2 border-orange-200 pl-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileCategoriesOpen(false);
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full rounded-md px-4 py-3 text-left text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-500"
+                <Link
+                  to="/shop?category=Shoes"
+                  onClick={closeMobileMenu}
+                  className={mobileCategoryStyle}
                 >
-                  Men
-                </button>
+                  All Shoes
+                </Link>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMobileCategoriesOpen(false);
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full rounded-md px-4 py-3 text-left text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-500"
+                <Link
+                  to="/shop?category=Clothes"
+                  onClick={closeMobileMenu}
+                  className={mobileCategoryStyle}
                 >
-                  Women
-                </button>
+                  All Clothes
+                </Link>
+
+                <div className="my-1 border-t border-gray-100" />
+
+                <Link
+                  to="/shop?category=Shoes&gender=Men"
+                  onClick={closeMobileMenu}
+                  className={mobileCategoryStyle}
+                >
+                  Men's Shoes
+                </Link>
+
+                <Link
+                  to="/shop?category=Clothes&gender=Men"
+                  onClick={closeMobileMenu}
+                  className={mobileCategoryStyle}
+                >
+                  Men's Clothes
+                </Link>
+
+                <Link
+                  to="/shop?category=Shoes&gender=Women"
+                  onClick={closeMobileMenu}
+                  className={mobileCategoryStyle}
+                >
+                  Women's Shoes
+                </Link>
+
+                <Link
+                  to="/shop?category=Clothes&gender=Women"
+                  onClick={closeMobileMenu}
+                  className={mobileCategoryStyle}
+                >
+                  Women's Clothes
+                </Link>
               </div>
             )}
 
