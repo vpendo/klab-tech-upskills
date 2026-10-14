@@ -1,9 +1,18 @@
 
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserRound, Mail, LockKeyhole, Eye, EyeOff, ArrowRight } from "lucide-react";
+import {
+  UserRound,
+  Mail,
+  LockKeyhole,
+  Eye,
+  EyeOff,
+  ArrowRight,
+} from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
 export default function Register() {
   const navigate = useNavigate();
@@ -17,7 +26,18 @@ export default function Register() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (loading) return;
+
     setError("");
+
+    const trimmedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (trimmedName.length < 2) {
+      setError("Please enter your full name.");
+      return;
+    }
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
@@ -29,24 +49,34 @@ export default function Register() {
 
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: trimmedName,
+          email: normalizedEmail,
+          password,
+        }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed.");
+        throw new Error(data?.message || "Registration failed. Please try again.");
       }
 
       navigate("/login", {
-        state: { message: "Account created successfully. Please log in." },
+        state: {
+          message: "Account created successfully. Please log in.",
+        },
       });
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to register. Please try again."
+        err instanceof TypeError
+          ? "Unable to connect to the server. Please try again."
+          : err instanceof Error
+            ? err.message
+            : "Unable to register. Please try again."
       );
     } finally {
       setLoading(false);
@@ -69,11 +99,13 @@ export default function Register() {
             <p className="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-orange-400">
               Find Your Style
             </p>
+
             <h1 className="text-5xl font-extrabold leading-tight text-white">
               Your style.
               <br />
               Your <span className="text-orange-500">story.</span>
             </h1>
+
             <p className="mt-5 max-w-sm leading-7 text-gray-300">
               Discover fashionable clothes and shoes for men and women.
               Create your account and start exploring PendoHub.
@@ -98,26 +130,36 @@ export default function Register() {
             <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
               Join PendoHub
             </p>
+
             <h2 className="mt-2 text-3xl font-extrabold text-gray-900">
               Create Account
             </h2>
+
             <p className="mt-2 text-sm text-gray-500">
               Sign up to discover your next favorite look.
             </p>
 
             {error && (
-              <p role="alert" className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <p
+                role="alert"
+                className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+              >
                 {error}
               </p>
             )}
 
             <form onSubmit={handleSubmit} className="mt-7 space-y-5">
               <div>
-                <label htmlFor="name" className="mb-2 block text-sm font-semibold text-gray-700">
+                <label
+                  htmlFor="name"
+                  className="mb-2 block text-sm font-semibold text-gray-700"
+                >
                   Full Name
                 </label>
+
                 <div className="flex items-center gap-3 rounded-lg border border-gray-300 px-4 transition focus-within:border-orange-600">
                   <UserRound size={19} className="shrink-0 text-gray-400" />
+
                   <input
                     id="name"
                     type="text"
@@ -133,11 +175,16 @@ export default function Register() {
               </div>
 
               <div>
-                <label htmlFor="register-email" className="mb-2 block text-sm font-semibold text-gray-700">
+                <label
+                  htmlFor="register-email"
+                  className="mb-2 block text-sm font-semibold text-gray-700"
+                >
                   Email Address
                 </label>
+
                 <div className="flex items-center gap-3 rounded-lg border border-gray-300 px-4 transition focus-within:border-orange-600">
                   <Mail size={19} className="shrink-0 text-gray-400" />
+
                   <input
                     id="register-email"
                     type="email"
@@ -152,11 +199,16 @@ export default function Register() {
               </div>
 
               <div>
-                <label htmlFor="register-password" className="mb-2 block text-sm font-semibold text-gray-700">
+                <label
+                  htmlFor="register-password"
+                  className="mb-2 block text-sm font-semibold text-gray-700"
+                >
                   Password
                 </label>
+
                 <div className="flex items-center gap-3 rounded-lg border border-gray-300 px-4 transition focus-within:border-orange-600">
                   <LockKeyhole size={19} className="shrink-0 text-gray-400" />
+
                   <input
                     id="register-password"
                     type={showPassword ? "text" : "password"}
@@ -168,9 +220,10 @@ export default function Register() {
                     placeholder="At least 6 characters"
                     className="h-12 w-full bg-transparent text-sm outline-none"
                   />
+
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowPassword((visible) => !visible)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     className="text-gray-400 hover:text-orange-600"
                   >
@@ -191,7 +244,10 @@ export default function Register() {
 
             <p className="mt-7 text-center text-sm text-gray-600">
               Already have an account?{" "}
-              <Link to="/login" className="font-bold text-orange-600 hover:text-orange-700">
+              <Link
+                to="/login"
+                className="font-bold text-orange-600 hover:text-orange-700"
+              >
                 Log in
               </Link>
             </p>

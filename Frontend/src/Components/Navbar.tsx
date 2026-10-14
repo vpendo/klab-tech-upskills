@@ -9,9 +9,11 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import { useCart } from "../Context/CartContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { cartCount } = useCart();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -38,6 +40,7 @@ const Navbar = () => {
     }`;
 
   const categories = [
+    { label: "Shop All", url: "/shop" },
     { label: "All Shoes", url: "/shop?category=Shoes" },
     { label: "All Clothes", url: "/shop?category=Clothes" },
     { label: "Men's Shoes", url: "/shop?category=Shoes&gender=Men" },
@@ -67,21 +70,25 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white shadow-sm">
       <nav className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-5 md:min-h-[76px] md:px-6 lg:px-10">
-        {/* Logo: always on the left */}
+        {/* Logo */}
         <Link
           to="/"
-          onClick={closeMobileMenu}
+          onClick={() => {
+            closeMobileMenu();
+            setSearchOpen(false);
+          }}
           className="shrink-0 whitespace-nowrap text-xl font-black tracking-tight sm:text-2xl"
         >
           Pendo<span className="text-orange-500">Hub</span>
         </Link>
 
-        {/* Desktop navigation: visible from large screens */}
+        {/* Desktop Navigation */}
         <div className="hidden items-center justify-center gap-5 lg:flex xl:gap-8">
           <NavLink to="/" end className={linkStyle}>
             New Arrivals
           </NavLink>
 
+          {/* Categories Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -103,22 +110,32 @@ const Navbar = () => {
             </button>
 
             {categoriesOpen && (
-              <div className="absolute left-0 top-full z-50 mt-2 w-56 rounded-xl border border-gray-100 bg-white p-2 shadow-xl">
-                {categories.map((category, index) => (
-                  <div key={category.url}>
-                    {index === 2 && (
-                      <div className="my-1 border-t border-gray-100" />
-                    )}
-                    <Link
-                      to={category.url}
-                      onClick={() => setCategoriesOpen(false)}
-                      className={categoryStyle}
-                    >
-                      {category.label}
-                    </Link>
-                  </div>
-                ))}
-              </div>
+              <>
+                <button
+                  type="button"
+                  aria-label="Close categories menu"
+                  className="fixed inset-0 z-40 cursor-default"
+                  onClick={() => setCategoriesOpen(false)}
+                />
+
+                <div className="absolute left-0 top-full z-50 mt-2 w-56 rounded-xl border border-gray-100 bg-white p-2 shadow-xl">
+                  {categories.map((category, index) => (
+                    <div key={category.label}>
+                      {index === 2 && (
+                        <div className="my-1 border-t border-gray-100" />
+                      )}
+
+                      <Link
+                        to={category.url}
+                        onClick={() => setCategoriesOpen(false)}
+                        className={categoryStyle}
+                      >
+                        {category.label}
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
@@ -131,12 +148,13 @@ const Navbar = () => {
           </NavLink>
         </div>
 
-        {/* Desktop icons: hidden on small and medium screens */}
+        {/* Desktop Icons */}
         <div className="hidden shrink-0 items-center gap-2 lg:flex">
           <button
             type="button"
             onClick={() => setSearchOpen(!searchOpen)}
             aria-label="Toggle search"
+            aria-expanded={searchOpen}
             className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
             <Search size={21} />
@@ -158,16 +176,23 @@ const Navbar = () => {
             <Heart size={21} />
           </Link>
 
+          {/* Shopping Cart with Live Count */}
           <Link
             to="/cart"
-            aria-label="Shopping cart"
-            className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
+            aria-label={`Shopping cart with ${cartCount} items`}
+            className="relative rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
             <ShoppingBag size={21} />
+
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white">
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            )}
           </Link>
         </div>
 
-        {/* Small-device controls: search + menu only */}
+        {/* Mobile Controls */}
         <div className="flex shrink-0 items-center gap-1 lg:hidden">
           <button
             type="button"
@@ -191,7 +216,7 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Search panel */}
+      {/* Search Panel */}
       {searchOpen && (
         <div className="w-full border-t border-gray-100 bg-white px-3 py-3 sm:px-5 sm:py-4">
           <form
@@ -211,7 +236,7 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() => setSearchOpen(false)}
-              className="shrink-0 text-xs font-semibold text-gray-500 hover:text-orange-500 sm:text-sm"
+              className="shrink-0 text-xs font-semibold text-gray-500 transition hover:text-orange-500 sm:text-sm"
             >
               Close
             </button>
@@ -219,7 +244,7 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Small and medium device dropdown */}
+      {/* Mobile Menu */}
       {menuOpen && (
         <div className="absolute left-0 top-full z-50 max-h-[calc(100dvh-64px)] w-full overflow-y-auto border-t border-gray-100 bg-white px-4 py-4 shadow-xl sm:px-6 lg:hidden">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-1">
@@ -232,6 +257,7 @@ const Navbar = () => {
               New Arrivals
             </NavLink>
 
+            {/* Mobile Categories */}
             <button
               type="button"
               onClick={() =>
@@ -252,10 +278,11 @@ const Navbar = () => {
             {mobileCategoriesOpen && (
               <div className="ml-3 border-l-2 border-orange-200 pl-3">
                 {categories.map((category, index) => (
-                  <div key={category.url}>
+                  <div key={category.label}>
                     {index === 2 && (
                       <div className="my-1 border-t border-gray-100" />
                     )}
+
                     <Link
                       to={category.url}
                       onClick={closeMobileMenu}
@@ -284,6 +311,7 @@ const Navbar = () => {
               Contact Us
             </NavLink>
 
+            {/* Account Links */}
             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-4">
               <Link
                 to="/login"
@@ -303,6 +331,7 @@ const Navbar = () => {
               </Link>
             </div>
 
+            {/* Wishlist and Shopping Bag */}
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Link
                 to="/wishlist"
@@ -319,7 +348,7 @@ const Navbar = () => {
                 className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
               >
                 <ShoppingBag size={17} />
-                Shopping Bag
+                Shopping Bag ({cartCount})
               </Link>
             </div>
           </div>

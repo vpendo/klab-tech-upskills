@@ -13,21 +13,19 @@ const shopLinks = [
 const careLinks = [
   { label: "About Us", href: "/about" },
   { label: "Contact Us", href: "/contact" },
-  { label: "Shipping & Returns", href: "/shipping" },
-  { label: "FAQs", href: "/faq" },
 ];
 
 export default function Footer() {
   const [email, setEmail] = useState("");
-  const [joined, setJoined] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!email.trim()) return;
 
-    // TODO: Connect this form to your newsletter API.
-    setJoined(true);
+    // Newsletter API integration will be added later.
+    setMessage("Newsletter subscriptions are coming soon.");
     setEmail("");
   };
 
@@ -41,8 +39,7 @@ export default function Footer() {
               to="/"
               className="inline-block text-2xl font-extrabold tracking-wide text-white"
             >
-              Pendo<span className="text-orange-500">Hub</span>
-              <span className="text-orange-500">.</span>
+              Pendo<span className="text-orange-500">Hub.</span>
             </Link>
 
             <p className="mt-5 max-w-xs text-sm leading-7 text-gray-400">
@@ -61,7 +58,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Shop Links */}
+          {/* Shop */}
           <nav aria-label="Shop">
             <h3 className="text-base font-bold text-white">
               Shop<span className="ml-2 text-orange-500">.</span>
@@ -110,7 +107,7 @@ export default function Footer() {
             </h3>
 
             <p className="mt-5 text-sm leading-6 text-gray-400">
-              Subscribe for fashion updates, new arrivals, and special offers.
+              Get updates about new arrivals, fashion trends, and special offers.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-5">
@@ -126,7 +123,7 @@ export default function Footer() {
                   value={email}
                   onChange={(event) => {
                     setEmail(event.target.value);
-                    setJoined(false);
+                    setMessage("");
                   }}
                   placeholder="Enter your email"
                   className="h-12 min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-gray-500"
@@ -140,17 +137,17 @@ export default function Footer() {
                   <ArrowRight size={20} />
                 </button>
               </div>
-            </form>
 
-            {joined && (
-              <p role="status" className="mt-3 text-sm text-orange-400">
-                Thanks for your interest in PendoHub!
-              </p>
-            )}
+              {message && (
+                <p role="status" className="mt-3 text-sm text-orange-400">
+                  {message}
+                </p>
+              )}
+            </form>
           </div>
         </div>
 
-        {/* Centered Copyright */}
+        {/* Copyright */}
         <div className="mt-12 border-t border-gray-800 pt-6 text-center text-xs text-gray-500">
           <p>
             © {new Date().getFullYear()} PendoHub. All rights reserved.
