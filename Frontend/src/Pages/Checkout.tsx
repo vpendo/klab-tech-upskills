@@ -1,73 +1,99 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ShoppingBag, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ShoppingBag,
+  ShieldCheck,
+} from "lucide-react";
 import { useCart } from "../Context/CartContext";
+
+const formatPrice = (price: number) =>
+  `${price.toLocaleString("en-RW")} RWF`;
+
+const IMAGE_PLACEHOLDER =
+  "https://placehold.co/400x500?text=PendoHub";
 
 const Checkout = () => {
   const { cartItems, cartCount, subtotal } = useCart();
 
   if (cartItems.length === 0) {
     return (
-      <section className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center">
-        <ShoppingBag size={56} className="text-orange-500 mb-4" />
+      <main className="flex min-h-[60vh] flex-col items-center justify-center px-6 py-16 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-50">
+          <ShoppingBag size={40} className="text-orange-500" />
+        </div>
 
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="mt-6 text-3xl font-bold text-gray-900">
           Your cart is empty
         </h1>
 
-        <p className="text-gray-500 mt-3">
-          Add some products before proceeding to checkout.
+        <p className="mt-3 max-w-md text-gray-500">
+          Add some products to your cart before proceeding to checkout.
         </p>
 
         <Link
           to="/shop"
-          className="mt-6 rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white hover:bg-orange-700"
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700"
         >
+          <ShoppingBag size={18} />
           Continue Shopping
         </Link>
-      </section>
+      </main>
     );
   }
 
   return (
-    <section className="min-h-screen bg-gray-50 px-4 py-12 sm:px-6">
+    <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-6xl">
+        {/* Back to cart */}
         <Link
           to="/cart"
-          className="mb-8 inline-flex items-center gap-2 text-gray-600 hover:text-orange-600"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-orange-600"
         >
           <ArrowLeft size={18} />
           Back to Cart
         </Link>
 
-        <h1 className="mb-2 text-3xl font-bold text-gray-900">
-          Checkout
-        </h1>
+        {/* Page heading */}
+        <header className="mb-8">
+          <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
+            PendoHub Shopping
+          </p>
 
-        <p className="mb-8 text-gray-500">
-          Review your order before completing checkout.
-        </p>
+          <h1 className="mt-2 text-3xl font-bold text-gray-900 sm:text-4xl">
+            Checkout
+          </h1>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Order summary */}
-          <div className="space-y-4 lg:col-span-2">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6">
-              <h2 className="mb-5 text-xl font-bold">Order Summary</h2>
+          <p className="mt-2 text-gray-500">
+            Review your order before completing checkout.
+          </p>
+        </header>
+
+        <div className="grid items-start gap-8 lg:grid-cols-3">
+          {/* Order details */}
+          <div className="space-y-6 lg:col-span-2">
+            <section className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6">
+              <h2 className="mb-4 text-xl font-bold text-gray-900">
+                Order Summary
+              </h2>
 
               {cartItems.map(({ product, quantity }) => (
                 <div
                   key={product._id}
                   className="flex gap-4 border-b border-gray-100 py-4 last:border-0"
                 >
-                  <img
+                  <CheckoutProductImage
                     src={product.imageUrl}
                     alt={product.name}
-                    className="h-24 w-24 rounded-xl object-cover"
                   />
 
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      to={`/product/${product._id}`}
+                      className="font-semibold text-gray-900 transition hover:text-orange-600"
+                    >
                       {product.name}
-                    </h3>
+                    </Link>
 
                     <p className="mt-1 text-sm text-gray-500">
                       {product.gender} · {product.category}
@@ -76,17 +102,21 @@ const Checkout = () => {
                     <p className="mt-2 text-sm text-gray-600">
                       Quantity: {quantity}
                     </p>
+
+                    <p className="mt-2 text-sm font-medium text-gray-900 sm:hidden">
+                      {formatPrice(product.price * quantity)}
+                    </p>
                   </div>
 
-                  <p className="font-semibold text-gray-900">
-                    {(product.price * quantity).toLocaleString()} RWF
+                  <p className="hidden shrink-0 text-sm font-semibold text-gray-900 sm:block">
+                    {formatPrice(product.price * quantity)}
                   </p>
                 </div>
               ))}
-            </div>
+            </section>
 
             {/* Demo notice */}
-            <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5">
+            <section className="rounded-2xl border border-orange-200 bg-orange-50 p-5">
               <div className="flex items-start gap-3">
                 <ShieldCheck
                   size={24}
@@ -94,41 +124,55 @@ const Checkout = () => {
                 />
 
                 <div>
-                  <h3 className="font-bold text-gray-900">
+                  <h2 className="font-bold text-gray-900">
                     Demo Checkout
-                  </h3>
+                  </h2>
 
-                  <p className="mt-1 text-sm text-gray-600">
-                    You're testing PendoHub with sample data. Payments and
-                    order placement are not enabled yet. No payment details
-                    are required.
+                  <p className="mt-1 text-sm leading-6 text-gray-600">
+                    You're exploring the PendoHub frontend using local
+                    product data. Online payments and real order placement
+                    are not enabled yet. You do not need to enter payment
+                    details.
                   </p>
                 </div>
               </div>
-            </div>
+            </section>
           </div>
 
-          {/* Price summary */}
-          <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-5 text-xl font-bold">Price Details</h2>
+          {/* Price details */}
+          <aside className="h-fit rounded-2xl border border-gray-200 bg-white p-6 lg:sticky lg:top-28">
+            <h2 className="text-xl font-bold text-gray-900">
+              Price Details
+            </h2>
 
-            <div className="flex justify-between text-gray-600">
-              <span>Items ({cartCount})</span>
-              <span>{subtotal.toLocaleString()} RWF</span>
-            </div>
+            <div className="mt-6 space-y-4">
+              <div className="flex justify-between gap-4 text-gray-600">
+                <span>
+                  Items ({cartCount})
+                </span>
 
-            <div className="mt-4 flex justify-between text-gray-600">
-              <span>Delivery</span>
-              <span>Not calculated</span>
-            </div>
+                <span className="text-right">
+                  {formatPrice(subtotal)}
+                </span>
+              </div>
 
-            <div className="my-5 border-t border-gray-200" />
+              <div className="flex justify-between gap-4 text-gray-600">
+                <span>Delivery</span>
 
-            <div className="flex justify-between text-lg font-bold">
-              <span>Subtotal</span>
-              <span className="text-orange-600">
-                {subtotal.toLocaleString()} RWF
-              </span>
+                <span className="text-right text-sm">
+                  Not calculated
+                </span>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex justify-between gap-4 text-lg font-bold">
+                  <span>Subtotal</span>
+
+                  <span className="text-right text-orange-600">
+                    {formatPrice(subtotal)}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <button
@@ -140,16 +184,43 @@ const Checkout = () => {
             </button>
 
             <Link
+              to="/cart"
+              className="mt-4 block text-center text-sm font-medium text-gray-600 transition hover:text-orange-600"
+            >
+              Edit Cart
+            </Link>
+
+            <Link
               to="/shop"
-              className="mt-4 block text-center text-sm font-medium text-orange-600 hover:underline"
+              className="mt-3 block text-center text-sm font-medium text-orange-600 hover:underline"
             >
               Continue Shopping
             </Link>
           </aside>
         </div>
       </div>
-    </section>
+    </main>
   );
 };
+
+function CheckoutProductImage({
+  src,
+  alt,
+}: {
+  src: string;
+  alt: string;
+}) {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <img
+      src={imageError || !src ? IMAGE_PLACEHOLDER : src}
+      alt={alt}
+      loading="lazy"
+      onError={() => setImageError(true)}
+      className="h-24 w-20 shrink-0 rounded-xl bg-gray-100 object-cover sm:h-28 sm:w-24"
+    />
+  );
+}
 
 export default Checkout;

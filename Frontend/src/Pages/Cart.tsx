@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -23,16 +24,13 @@ function Cart() {
     cartCount,
   } = useCart();
 
-  // Display a message when the cart is empty.
+  // Empty cart
   if (cartItems.length === 0) {
     return (
       <main className="flex min-h-[60vh] items-center justify-center bg-gray-50 px-4 py-16">
         <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50">
-            <ShoppingBag
-              size={36}
-              className="text-orange-500"
-            />
+            <ShoppingBag size={36} className="text-orange-500" />
           </div>
 
           <h1 className="mt-6 text-3xl font-bold text-gray-900">
@@ -70,8 +68,7 @@ function Cart() {
           </h1>
 
           <p className="mt-2 text-gray-500">
-            {cartCount}{" "}
-            {cartCount === 1 ? "item" : "items"} in your cart
+            {cartCount} {cartCount === 1 ? "item" : "items"} in your cart
           </p>
         </header>
 
@@ -84,8 +81,7 @@ function Cart() {
             {cartItems.map((item) => {
               const product = item.product;
               const stock = product.quantity;
-              const isMaxStock =
-                item.quantity >= stock;
+              const isMaxStock = item.quantity >= stock;
 
               return (
                 <article
@@ -98,16 +94,9 @@ function Cart() {
                     aria-label={`View ${product.name}`}
                     className="h-32 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:h-40 sm:w-36"
                   >
-                    <img
-                      src={product.imageUrl || IMAGE_PLACEHOLDER}
+                    <CartProductImage
+                      src={product.imageUrl}
                       alt={product.name}
-                      loading="lazy"
-                      onError={(event) => {
-                        event.currentTarget.onerror = null;
-                        event.currentTarget.src =
-                          IMAGE_PLACEHOLDER;
-                      }}
-                      className="h-full w-full object-cover transition duration-300 hover:scale-105"
                     />
                   </Link>
 
@@ -130,12 +119,10 @@ function Cart() {
 
                     <p className="mt-1 text-sm text-gray-500">
                       Item total:{" "}
-                      {formatPrice(
-                        product.price * item.quantity
-                      )}
+                      {formatPrice(product.price * item.quantity)}
                     </p>
 
-                    {/* Quantity and remove controls */}
+                    {/* Quantity controls */}
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
                       <div className="flex items-center rounded-lg border border-gray-200">
                         <button
@@ -178,9 +165,7 @@ function Cart() {
 
                       <button
                         type="button"
-                        onClick={() =>
-                          removeFromCart(product._id)
-                        }
+                        onClick={() => removeFromCart(product._id)}
                         className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 transition hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                         aria-label={`Remove ${product.name} from cart`}
                       >
@@ -197,8 +182,7 @@ function Cart() {
 
                     {stock < 1 && (
                       <p className="mt-2 text-xs font-medium text-red-600">
-                        Currently out of stock. Remove this item
-                        to continue.
+                        Currently out of stock. Remove this item to continue.
                       </p>
                     )}
                   </div>
@@ -206,7 +190,6 @@ function Cart() {
               );
             })}
 
-            {/* Return to shop */}
             <Link
               to="/shop"
               className="inline-flex items-center gap-2 pt-3 font-semibold text-gray-700 transition hover:text-orange-600"
@@ -236,7 +219,6 @@ function Cart() {
 
               <div className="flex justify-between gap-4 text-gray-600">
                 <span>Shipping</span>
-
                 <span className="text-right text-sm">
                   Calculated at checkout
                 </span>
@@ -263,13 +245,33 @@ function Cart() {
             </Link>
 
             <p className="mt-4 text-center text-xs leading-5 text-gray-500">
-              Your cart is saved in this browser. Checkout and
-              order placement must be implemented separately.
+              Your cart is saved in this browser. Checkout and order
+              placement must be implemented separately.
             </p>
           </aside>
         </div>
       </div>
     </main>
+  );
+}
+
+function CartProductImage({
+  src,
+  alt,
+}: {
+  src: string;
+  alt: string;
+}) {
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <img
+      src={imageError || !src ? IMAGE_PLACEHOLDER : src}
+      alt={alt}
+      loading="lazy"
+      onError={() => setImageError(true)}
+      className="h-full w-full object-cover transition duration-300 hover:scale-105"
+    />
   );
 }
 

@@ -1,9 +1,14 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, ArrowUpRight, Check } from "lucide-react";
+import {
+  ShoppingCart,
+  ArrowUpRight,
+  Check,
+  Heart,
+} from "lucide-react";
 import type { Product } from "../Types/product";
 import { useCart } from "../Context/CartContext";
+import { useWishlist } from "../Context/WishlistContext";
 
 interface ProductCardProps {
   product: Product;
@@ -11,9 +16,12 @@ interface ProductCardProps {
 
 function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+
   const [added, setAdded] = useState(false);
 
   const isOutOfStock = product.quantity <= 0;
+  const isWishlisted = isInWishlist(product._id);
 
   useEffect(() => {
     if (!added) return;
@@ -32,35 +40,64 @@ function ProductCard({ product }: ProductCardProps) {
     setAdded(true);
   };
 
+  const handleWishlist = () => {
+    toggleWishlist(product);
+  };
+
   return (
     <article className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-      <Link
-        to={`/product/${product._id}`}
-        className="relative block aspect-[4/5] overflow-hidden bg-gray-100"
-      >
-        <img
-          src={product.imageUrl}
-          alt={product.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
+      <div className="relative">
+        <Link
+          to={`/product/${product._id}`}
+          className="relative block aspect-[4/5] overflow-hidden bg-gray-100"
+        >
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            loading="lazy"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          />
 
-        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-gray-800">
-          {product.category}
-        </span>
-
-        {isOutOfStock && (
-          <span className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <span className="rounded-md bg-white px-4 py-2 text-sm font-bold text-gray-900">
-              Out of Stock
-            </span>
+          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-gray-800">
+            {product.category}
           </span>
-        )}
 
-        <span className="absolute bottom-3 right-3 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full bg-white text-gray-900 opacity-0 shadow-md transition group-hover:translate-y-0 group-hover:opacity-100">
-          <ArrowUpRight size={20} />
-        </span>
-      </Link>
+          {isOutOfStock && (
+            <span className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <span className="rounded-md bg-white px-4 py-2 text-sm font-bold text-gray-900">
+                Out of Stock
+              </span>
+            </span>
+          )}
+
+          <span className="absolute bottom-3 right-3 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full bg-white text-gray-900 opacity-0 shadow-md transition group-hover:translate-y-0 group-hover:opacity-100">
+            <ArrowUpRight size={20} />
+          </span>
+        </Link>
+
+        {/* Wishlist heart button */}
+        <button
+          type="button"
+          onClick={handleWishlist}
+          aria-label={
+            isWishlisted
+              ? `Remove ${product.name} from wishlist`
+              : `Add ${product.name} to wishlist`
+          }
+          aria-pressed={isWishlisted}
+          title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md transition hover:scale-110 active:scale-95"
+        >
+          <Heart
+            size={20}
+            className={
+              isWishlisted
+                ? "fill-orange-600 text-orange-600"
+                : "text-gray-700"
+            }
+          />
+        </button>
+      </div>
 
       <div className="p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-orange-600">

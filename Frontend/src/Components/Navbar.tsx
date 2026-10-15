@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
@@ -11,10 +10,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useCart } from "../Context/CartContext";
+import { useWishlist } from "../Context/WishlistContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -181,11 +182,24 @@ const Navbar = () => {
 
           <Link
             to="/wishlist"
-            aria-label="Wishlist"
+            aria-label={`Wishlist with ${wishlistCount} saved products`}
             onClick={closeNavigation}
-            className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
+            className="relative rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
-            <Heart size={21} />
+            <Heart
+              size={21}
+              className={
+                wishlistCount > 0
+                  ? "fill-orange-500 text-orange-500"
+                  : ""
+              }
+            />
+
+            {wishlistCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white">
+                {wishlistCount > 99 ? "99+" : wishlistCount}
+              </span>
+            )}
           </Link>
 
           <Link
@@ -195,6 +209,7 @@ const Navbar = () => {
             className="relative rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
             <ShoppingBag size={21} />
+
             {cartCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white">
                 {cartCount > 99 ? "99+" : cartCount}
@@ -236,6 +251,7 @@ const Navbar = () => {
             className="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full border border-gray-200 px-3 py-2.5 focus-within:border-orange-500 sm:gap-3 sm:px-5 sm:py-3"
           >
             <Search size={19} className="shrink-0 text-orange-500" />
+
             <input
               name="search"
               type="search"
@@ -246,12 +262,14 @@ const Navbar = () => {
               autoFocus
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
+
             <button
               type="submit"
               className="shrink-0 rounded-full bg-orange-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-600 sm:text-sm"
             >
               Search
             </button>
+
             <button
               type="button"
               onClick={() => {
@@ -303,6 +321,7 @@ const Navbar = () => {
                     {index === 2 && (
                       <div className="my-1 border-t border-gray-100" />
                     )}
+
                     <Link
                       to={category.url}
                       onClick={closeNavigation}
@@ -346,6 +365,7 @@ const Navbar = () => {
                 onClick={closeNavigation}
                 className="flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-2 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
               >
+                <UserRound size={17} />
                 Create Account
               </Link>
             </div>
@@ -356,8 +376,15 @@ const Navbar = () => {
                 onClick={closeNavigation}
                 className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
               >
-                <Heart size={17} />
-                Wishlist
+                <Heart
+                  size={17}
+                  className={
+                    wishlistCount > 0
+                      ? "fill-orange-500 text-orange-500"
+                      : ""
+                  }
+                />
+                Wishlist ({wishlistCount})
               </Link>
 
               <Link
