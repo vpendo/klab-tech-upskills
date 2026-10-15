@@ -111,22 +111,16 @@ const Home = () => {
       </section>
 
       {/* Featured Products */}
-      <section className="bg-gray-50">
+      <section className="bg-[#FAF8F5]">
         <div className="mx-auto max-w-7xl px-6 py-16 sm:px-10 lg:px-16">
           <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-orange-600">
-                Selected for you
-              </p>
-
-              <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-                Featured Products
-              </h2>
-            </div>
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              Featured Products
+            </h2>
 
             <Link
               to="/shop"
-              className="inline-flex shrink-0 items-center gap-2 font-semibold text-orange-600 hover:text-orange-700"
+              className="inline-flex shrink-0 items-center gap-2 font-semibold text-orange-600 transition hover:text-orange-700"
             >
               View All
               <ArrowRight size={18} />
@@ -165,7 +159,7 @@ const Home = () => {
 
           <Link
             to="/shop"
-            className="inline-flex shrink-0 items-center gap-2 font-semibold text-orange-600 hover:text-orange-700"
+            className="inline-flex shrink-0 items-center gap-2 font-semibold text-orange-600 transition hover:text-orange-700"
           >
             Shop All
             <ArrowRight size={18} />
@@ -186,25 +180,6 @@ const Home = () => {
             New arrivals will appear here soon.
           </p>
         )}
-      </section>
-
-      {/* Bottom Call to Action */}
-      <section className="bg-black px-6 py-16 text-center">
-        <h2 className="text-3xl font-bold text-white sm:text-4xl">
-          Your Style, Your Choice.
-        </h2>
-
-        <p className="mx-auto mt-4 max-w-xl text-gray-300">
-          Explore PendoHub and find pieces that express your style.
-        </p>
-
-        <Link
-          to="/shop"
-          className="mt-8 inline-flex items-center gap-2 rounded-md bg-orange-600 px-7 py-3 font-semibold text-white transition hover:bg-orange-700"
-        >
-          Explore the Shop
-          <ArrowRight size={18} />
-        </Link>
       </section>
     </main>
   );
