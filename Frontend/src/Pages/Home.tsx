@@ -6,7 +6,6 @@ import { products } from "../data/product";
 import ProductCard from "../Components/ProductCart";
 
 const Home = () => {
-  const featuredProducts = products.slice(0, 4);
   const newArrivals = [...products].reverse().slice(0, 4);
 
   const categories = [
@@ -26,13 +25,11 @@ const Home = () => {
 
   return (
     <main className="bg-white">
-      {/* Hero Section */}
       <section className="relative flex min-h-[calc(100vh-80px)] items-center overflow-hidden bg-black">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${Background})` }}
         />
-
         <div className="absolute inset-0 bg-black/60" />
 
         <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-24 sm:px-10 lg:px-16">
@@ -42,15 +39,12 @@ const Home = () => {
             </p>
 
             <h1 className="mb-6 text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Find Your{" "}
-              <span className="text-orange-400">
-                Perfect Style.
-              </span>
+              Find Your <span className="text-orange-400">Perfect Style.</span>
             </h1>
 
             <p className="mb-10 max-w-xl text-lg leading-8 text-gray-200 sm:text-xl">
-              Discover stylish clothes and shoes for every
-              occasion. Express yourself with confidence.
+              Discover stylish clothes and shoes for every occasion.
+              Express yourself with confidence.
             </p>
 
             <Link
@@ -64,7 +58,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Shop by Category */}
       <section className="mx-auto max-w-7xl px-6 py-16 sm:px-10 lg:px-16">
         <div className="mb-8">
           <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-orange-600">
@@ -86,6 +79,7 @@ const Home = () => {
               <img
                 src={category.image}
                 alt={category.name}
+                loading="lazy"
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               />
 
@@ -110,30 +104,32 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Products */}
       <section className="bg-[#FAF8F5]">
         <div className="mx-auto max-w-7xl px-6 py-16 sm:px-10 lg:px-16">
           <div className="mb-8 flex items-end justify-between gap-4">
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Featured Products
-            </h2>
+            <div>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-orange-600">
+                Discover something new
+              </p>
+
+              <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+                New Arrivals
+              </h2>
+            </div>
 
             <Link
               to="/shop"
               className="inline-flex shrink-0 items-center gap-2 font-semibold text-orange-600 transition hover:text-orange-700"
             >
-              View All
+              Shop All
               <ArrowRight size={18} />
             </Link>
           </div>
 
-          {featuredProducts.length > 0 ? (
+          {newArrivals.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {featuredProducts.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                />
+              {newArrivals.map((product) => (
+                <ProductCard key={product._id} product={product} />
               ))}
             </div>
           ) : (
@@ -142,44 +138,6 @@ const Home = () => {
             </p>
           )}
         </div>
-      </section>
-
-      {/* New Arrivals */}
-      <section className="mx-auto max-w-7xl px-6 py-16 sm:px-10 lg:px-16">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-orange-600">
-              Discover something new
-            </p>
-
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              New Arrivals
-            </h2>
-          </div>
-
-          <Link
-            to="/shop"
-            className="inline-flex shrink-0 items-center gap-2 font-semibold text-orange-600 transition hover:text-orange-700"
-          >
-            Shop All
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-
-        {newArrivals.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {newArrivals.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="py-10 text-center text-gray-500">
-            New arrivals will appear here soon.
-          </p>
-        )}
       </section>
     </main>
   );

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
@@ -66,26 +67,24 @@ const Navbar = () => {
 
     const query = searchQuery.trim();
 
-    setSearchOpen(false);
-    closeMobileMenu();
-    setCategoriesOpen(false);
+    closeNavigation();
+    setSearchQuery("");
 
     if (query) {
       navigate(`/shop?search=${encodeURIComponent(query)}`);
     }
-
-    setSearchQuery("");
   };
 
   const toggleSearch = () => {
     setSearchOpen((previous) => !previous);
     setCategoriesOpen(false);
+    setMenuOpen(false);
+    setMobileCategoriesOpen(false);
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white shadow-sm">
       <nav className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-5 md:min-h-[76px] md:px-6 lg:px-10">
-        {/* Logo */}
         <Link
           to="/"
           onClick={closeNavigation}
@@ -94,13 +93,11 @@ const Navbar = () => {
           Pendo<span className="text-orange-500">Hub</span>
         </Link>
 
-        {/* Desktop Navigation */}
         <div className="hidden items-center justify-center gap-5 lg:flex xl:gap-8">
           <NavLink to="/" end className={linkStyle}>
             New Arrivals
           </NavLink>
 
-          {/* Categories Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -139,7 +136,6 @@ const Navbar = () => {
                       {index === 2 && (
                         <div className="my-1 border-t border-gray-100" />
                       )}
-
                       <Link
                         to={category.url}
                         onClick={() => setCategoriesOpen(false)}
@@ -163,7 +159,6 @@ const Navbar = () => {
           </NavLink>
         </div>
 
-        {/* Desktop Icons */}
         <div className="hidden shrink-0 items-center gap-2 lg:flex">
           <button
             type="button"
@@ -200,7 +195,6 @@ const Navbar = () => {
             className="relative rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
             <ShoppingBag size={21} />
-
             {cartCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white">
                 {cartCount > 99 ? "99+" : cartCount}
@@ -209,7 +203,6 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* Mobile Controls */}
         <div className="flex shrink-0 items-center gap-1 lg:hidden">
           <button
             type="button"
@@ -236,7 +229,6 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Search Panel */}
       {searchOpen && (
         <div className="border-t border-gray-100 bg-white px-3 py-3 sm:px-5 sm:py-4">
           <form
@@ -244,7 +236,6 @@ const Navbar = () => {
             className="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full border border-gray-200 px-3 py-2.5 focus-within:border-orange-500 sm:gap-3 sm:px-5 sm:py-3"
           >
             <Search size={19} className="shrink-0 text-orange-500" />
-
             <input
               name="search"
               type="search"
@@ -255,14 +246,12 @@ const Navbar = () => {
               autoFocus
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
-
             <button
               type="submit"
               className="shrink-0 rounded-full bg-orange-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-600 sm:text-sm"
             >
               Search
             </button>
-
             <button
               type="button"
               onClick={() => {
@@ -278,7 +267,6 @@ const Navbar = () => {
         </div>
       )}
 
-      {/* Mobile Menu */}
       {menuOpen && (
         <div className="absolute left-0 top-full z-50 max-h-[calc(100dvh-64px)] w-full overflow-y-auto border-t border-gray-100 bg-white px-4 py-4 shadow-xl sm:px-6 lg:hidden">
           <div className="mx-auto flex w-full max-w-xl flex-col gap-1">
@@ -291,7 +279,6 @@ const Navbar = () => {
               New Arrivals
             </NavLink>
 
-            {/* Mobile Categories */}
             <button
               type="button"
               onClick={() =>
@@ -316,7 +303,6 @@ const Navbar = () => {
                     {index === 2 && (
                       <div className="my-1 border-t border-gray-100" />
                     )}
-
                     <Link
                       to={category.url}
                       onClick={closeNavigation}
@@ -345,7 +331,6 @@ const Navbar = () => {
               Contact Us
             </NavLink>
 
-            {/* Account Links */}
             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-4">
               <Link
                 to="/login"
@@ -365,7 +350,6 @@ const Navbar = () => {
               </Link>
             </div>
 
-            {/* Wishlist and Shopping Bag */}
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Link
                 to="/wishlist"
