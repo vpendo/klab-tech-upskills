@@ -1,58 +1,21 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ShoppingCart, ArrowLeft, Check } from "lucide-react";
-import {
-  getProductById,
-  type Product,
-} from "../Services/productService";
 import { useCart } from "../Context/CartContext";
+import { products } from "../data/product";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const product = products.find((item) => item._id === id);
+
   const [added, setAdded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchProduct = async () => {
-      if (!id) {
-        setError("Invalid product ID.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError("");
-        setProduct(null);
-        setAdded(false);
-
-        const data = await getProductById(id);
-
-        if (isMounted) {
-          setProduct(data);
-        }
-      } catch {
-        if (isMounted) {
-          setError("Unable to load this product. Please try again.");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchProduct();
-
-    return () => {
-      isMounted = false;
-    };
+    setAdded(false);
+    setImageError(false);
   }, [id]);
 
   const handleAddToCart = () => {
@@ -62,15 +25,7 @@ const ProductDetails = () => {
     setAdded(true);
   };
 
-  if (loading) {
-    return (
-      <main className="flex min-h-[50vh] items-center justify-center px-6">
-        <p className="text-gray-500">Loading product...</p>
-      </main>
-    );
-  }
-
-  if (error || !product) {
+  if (!product) {
     return (
       <main className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center">
         <h1 className="text-2xl font-bold text-gray-900">
@@ -78,14 +33,14 @@ const ProductDetails = () => {
         </h1>
 
         <p className="mt-2 text-gray-500">
-          {error || "This product may no longer be available."}
+          This product may no longer be available.
         </p>
 
         <Link
           to="/shop"
-          className="mt-4 text-orange-600 hover:underline"
+          className="mt-4 inline-flex items-center text-orange-600 transition hover:underline"
         >
-          <ArrowLeft className="mr-1 inline" size={16} />
+          <ArrowLeft className="mr-1" size={16} />
           Back to Shop
         </Link>
       </main>
@@ -103,15 +58,20 @@ const ProductDetails = () => {
       </Link>
 
       <div className="grid items-start gap-8 md:grid-cols-2 md:gap-10">
-        <div className="overflow-hidden rounded-2xl bg-gray-100">
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="h-[360px] w-full object-cover sm:h-[460px]"
-            onError={(event) => {
-              event.currentTarget.style.visibility = "hidden";
-            }}
-          />
+        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl bg-gray-100 sm:min-h-[460px]">
+          {imageError ? (
+            <div className="p-6 text-center text-gray-500">
+              <ShoppingCart size={36} className="mx-auto mb-3 text-gray-400" />
+              <p>Product image unavailable</p>
+            </div>
+          ) : (
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="h-[360px] w-full object-cover transition duration-500 hover:scale-105 sm:h-[460px]"
+              onError={() => setImageError(true)}
+            />
+          )}
         </div>
 
         <div className="py-2">
@@ -149,13 +109,19 @@ const ProductDetails = () => {
             disabled={product.quantity <= 0}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:w-auto"
           >
-            {added ? <Check size={20} /> : <ShoppingCart size={20} />}
-
-            {product.quantity <= 0
-              ? "Out of Stock"
-              : added
-                ? "Added to Cart"
-                : "Add to Cart"}
+            {product.quantity <= 0 ? (
+              "Out of Stock"
+            ) : added ? (
+              <>
+                <Check size={20} />
+                Added to Cart
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={20} />
+                Add to Cart
+              </>
+            )}
           </button>
 
           <p className="mt-4 text-sm text-gray-500">

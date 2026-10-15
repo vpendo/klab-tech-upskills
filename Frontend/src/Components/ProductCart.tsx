@@ -1,7 +1,8 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShoppingCart, ArrowUpRight, Check } from "lucide-react";
-import type { Product } from "../Services/productService";
+import type { Product } from "../Types/product";
 import { useCart } from "../Context/CartContext";
 
 interface ProductCardProps {
@@ -13,6 +14,16 @@ function ProductCard({ product }: ProductCardProps) {
   const [added, setAdded] = useState(false);
 
   const isOutOfStock = product.quantity <= 0;
+
+  useEffect(() => {
+    if (!added) return;
+
+    const timeout = window.setTimeout(() => {
+      setAdded(false);
+    }, 1500);
+
+    return () => window.clearTimeout(timeout);
+  }, [added]);
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
@@ -82,12 +93,19 @@ function ProductCard({ product }: ProductCardProps) {
           disabled={isOutOfStock}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
         >
-          {added ? <Check size={18} /> : <ShoppingCart size={18} />}
-          {isOutOfStock
-            ? "Unavailable"
-            : added
-              ? "Added to Cart ✓"
-              : "Add to Cart"}
+          {isOutOfStock ? (
+            "Unavailable"
+          ) : added ? (
+            <>
+              <Check size={18} />
+              Added to Cart
+            </>
+          ) : (
+            <>
+              <ShoppingCart size={18} />
+              Add to Cart
+            </>
+          )}
         </button>
       </div>
     </article>

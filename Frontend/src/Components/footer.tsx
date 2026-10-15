@@ -24,20 +24,21 @@ export default function Footer() {
 
     if (!email.trim()) return;
 
-    // Newsletter API integration will be added later.
-    setMessage("Newsletter subscriptions are coming soon.");
+    // Frontend only: no newsletter subscription is stored or sent.
+    setMessage("Thanks for your interest! Newsletter subscriptions are coming soon.");
     setEmail("");
   };
 
   return (
     <footer className="border-t border-gray-800 bg-black font-sans text-gray-300">
-      <div className="mx-auto max-w-7xl px-6 pb-8 pt-14 sm:px-8 lg:px-10">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-4 pb-8 pt-12 sm:px-6 sm:pt-14 lg:px-10">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {/* Brand */}
           <div>
             <Link
               to="/"
-              className="inline-block text-2xl font-extrabold tracking-wide text-white"
+              aria-label="PendoHub home"
+              className="inline-block text-2xl font-extrabold tracking-tight text-white transition hover:opacity-90"
             >
               Pendo<span className="text-orange-500">Hub.</span>
             </Link>
@@ -48,17 +49,18 @@ export default function Footer() {
             </p>
 
             <div className="mt-5 flex items-center gap-2 text-sm text-gray-400">
-              <Mail size={17} className="text-orange-500" />
+              <Mail size={17} className="shrink-0 text-orange-500" />
+
               <a
                 href="mailto:pendohub@gmail.com"
-                className="transition-colors hover:text-orange-400"
+                className="break-all transition-colors hover:text-orange-400"
               >
                 pendohub@gmail.com
               </a>
             </div>
           </div>
 
-          {/* Shop */}
+          {/* Shop Links */}
           <nav aria-label="Shop">
             <h3 className="text-base font-bold text-white">
               Shop<span className="ml-2 text-orange-500">.</span>
@@ -69,7 +71,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.href}
-                    className="transition-colors duration-200 hover:text-orange-400"
+                    className="inline-block transition-colors duration-200 hover:translate-x-1 hover:text-orange-400"
                   >
                     {link.label}
                   </Link>
@@ -90,7 +92,7 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     to={link.href}
-                    className="transition-colors duration-200 hover:text-orange-400"
+                    className="inline-block transition-colors duration-200 hover:translate-x-1 hover:text-orange-400"
                   >
                     {link.label}
                   </Link>
@@ -115,7 +117,7 @@ export default function Footer() {
                 Email address
               </label>
 
-              <div className="flex border border-gray-700 bg-gray-900 transition-colors focus-within:border-orange-500">
+              <div className="flex overflow-hidden rounded-lg border border-gray-700 bg-gray-900 transition-colors focus-within:border-orange-500">
                 <input
                   id="footer-email"
                   type="email"
@@ -126,20 +128,25 @@ export default function Footer() {
                     setMessage("");
                   }}
                   placeholder="Enter your email"
+                  autoComplete="email"
                   className="h-12 min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-gray-500"
                 />
 
                 <button
                   type="submit"
                   aria-label="Subscribe to newsletter"
-                  className="flex h-12 items-center justify-center bg-orange-600 px-4 text-white transition-colors hover:bg-orange-700"
+                  className="flex h-12 shrink-0 items-center justify-center bg-orange-500 px-4 text-white transition-colors hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
                 >
                   <ArrowRight size={20} />
                 </button>
               </div>
 
               {message && (
-                <p role="status" className="mt-3 text-sm text-orange-400">
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="mt-3 text-sm leading-5 text-orange-400"
+                >
                   {message}
                 </p>
               )}

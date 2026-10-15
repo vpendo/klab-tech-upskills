@@ -19,6 +19,7 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const linkStyle = ({ isActive }: { isActive: boolean }) =>
     `relative whitespace-nowrap py-2 text-sm font-semibold transition-colors
@@ -54,17 +55,31 @@ const Navbar = () => {
     setMobileCategoriesOpen(false);
   };
 
+  const closeNavigation = () => {
+    closeMobileMenu();
+    setCategoriesOpen(false);
+    setSearchOpen(false);
+  };
+
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
-    const query = String(formData.get("search") || "").trim();
+    const query = searchQuery.trim();
+
+    setSearchOpen(false);
+    closeMobileMenu();
+    setCategoriesOpen(false);
 
     if (query) {
       navigate(`/shop?search=${encodeURIComponent(query)}`);
-      setSearchOpen(false);
-      closeMobileMenu();
     }
+
+    setSearchQuery("");
+  };
+
+  const toggleSearch = () => {
+    setSearchOpen((previous) => !previous);
+    setCategoriesOpen(false);
   };
 
   return (
@@ -73,10 +88,7 @@ const Navbar = () => {
         {/* Logo */}
         <Link
           to="/"
-          onClick={() => {
-            closeMobileMenu();
-            setSearchOpen(false);
-          }}
+          onClick={closeNavigation}
           className="shrink-0 whitespace-nowrap text-xl font-black tracking-tight sm:text-2xl"
         >
           Pendo<span className="text-orange-500">Hub</span>
@@ -92,7 +104,10 @@ const Navbar = () => {
           <div className="relative">
             <button
               type="button"
-              onClick={() => setCategoriesOpen(!categoriesOpen)}
+              onClick={() => {
+                setCategoriesOpen((previous) => !previous);
+                setSearchOpen(false);
+              }}
               aria-expanded={categoriesOpen}
               className={`flex items-center gap-1 py-2 text-sm font-semibold transition ${
                 categoriesOpen
@@ -152,7 +167,7 @@ const Navbar = () => {
         <div className="hidden shrink-0 items-center gap-2 lg:flex">
           <button
             type="button"
-            onClick={() => setSearchOpen(!searchOpen)}
+            onClick={toggleSearch}
             aria-label="Toggle search"
             aria-expanded={searchOpen}
             className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
@@ -163,6 +178,7 @@ const Navbar = () => {
           <Link
             to="/login"
             aria-label="Login"
+            onClick={closeNavigation}
             className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
             <UserRound size={21} />
@@ -171,15 +187,16 @@ const Navbar = () => {
           <Link
             to="/wishlist"
             aria-label="Wishlist"
+            onClick={closeNavigation}
             className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
             <Heart size={21} />
           </Link>
 
-          {/* Shopping Cart with Live Count */}
           <Link
             to="/cart"
             aria-label={`Shopping cart with ${cartCount} items`}
+            onClick={closeNavigation}
             className="relative rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
           >
             <ShoppingBag size={21} />
@@ -196,7 +213,7 @@ const Navbar = () => {
         <div className="flex shrink-0 items-center gap-1 lg:hidden">
           <button
             type="button"
-            onClick={() => setSearchOpen(!searchOpen)}
+            onClick={toggleSearch}
             aria-label="Toggle search"
             aria-expanded={searchOpen}
             className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
@@ -206,7 +223,10 @@ const Navbar = () => {
 
           <button
             type="button"
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => {
+              setMenuOpen((previous) => !previous);
+              setCategoriesOpen(false);
+            }}
             aria-label="Toggle navigation menu"
             aria-expanded={menuOpen}
             className="rounded-full p-2 text-gray-800 transition hover:bg-orange-50 hover:text-orange-500"
@@ -218,7 +238,7 @@ const Navbar = () => {
 
       {/* Search Panel */}
       {searchOpen && (
-        <div className="w-full border-t border-gray-100 bg-white px-3 py-3 sm:px-5 sm:py-4">
+        <div className="border-t border-gray-100 bg-white px-3 py-3 sm:px-5 sm:py-4">
           <form
             onSubmit={handleSearch}
             className="mx-auto flex w-full max-w-2xl items-center gap-2 rounded-full border border-gray-200 px-3 py-2.5 focus-within:border-orange-500 sm:gap-3 sm:px-5 sm:py-3"
@@ -228,17 +248,31 @@ const Navbar = () => {
             <input
               name="search"
               type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search clothes, shoes..."
+              aria-label="Search products"
               autoFocus
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
 
             <button
-              type="button"
-              onClick={() => setSearchOpen(false)}
-              className="shrink-0 text-xs font-semibold text-gray-500 transition hover:text-orange-500 sm:text-sm"
+              type="submit"
+              className="shrink-0 rounded-full bg-orange-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-600 sm:text-sm"
             >
-              Close
+              Search
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSearchOpen(false);
+                setSearchQuery("");
+              }}
+              aria-label="Close search"
+              className="shrink-0 rounded-full p-1 text-gray-500 transition hover:bg-orange-50 hover:text-orange-500"
+            >
+              <X size={19} />
             </button>
           </form>
         </div>
@@ -251,7 +285,7 @@ const Navbar = () => {
             <NavLink
               to="/"
               end
-              onClick={closeMobileMenu}
+              onClick={closeNavigation}
               className={mobileLinkStyle}
             >
               New Arrivals
@@ -261,7 +295,7 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() =>
-                setMobileCategoriesOpen(!mobileCategoriesOpen)
+                setMobileCategoriesOpen((previous) => !previous)
               }
               aria-expanded={mobileCategoriesOpen}
               className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-sm font-semibold text-gray-800 transition hover:bg-orange-50 hover:text-orange-600"
@@ -285,8 +319,8 @@ const Navbar = () => {
 
                     <Link
                       to={category.url}
-                      onClick={closeMobileMenu}
-                      className="block rounded-lg px-4 py-3 text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
+                      onClick={closeNavigation}
+                      className={categoryStyle}
                     >
                       {category.label}
                     </Link>
@@ -297,7 +331,7 @@ const Navbar = () => {
 
             <NavLink
               to="/about"
-              onClick={closeMobileMenu}
+              onClick={closeNavigation}
               className={mobileLinkStyle}
             >
               About Us
@@ -305,7 +339,7 @@ const Navbar = () => {
 
             <NavLink
               to="/contact"
-              onClick={closeMobileMenu}
+              onClick={closeNavigation}
               className={mobileLinkStyle}
             >
               Contact Us
@@ -315,7 +349,7 @@ const Navbar = () => {
             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-4">
               <Link
                 to="/login"
-                onClick={closeMobileMenu}
+                onClick={closeNavigation}
                 className="flex items-center justify-center gap-2 rounded-lg border border-orange-200 px-2 py-3 text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
               >
                 <UserRound size={17} />
@@ -324,7 +358,7 @@ const Navbar = () => {
 
               <Link
                 to="/register"
-                onClick={closeMobileMenu}
+                onClick={closeNavigation}
                 className="flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-2 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
               >
                 Create Account
@@ -335,7 +369,7 @@ const Navbar = () => {
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Link
                 to="/wishlist"
-                onClick={closeMobileMenu}
+                onClick={closeNavigation}
                 className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
               >
                 <Heart size={17} />
@@ -344,7 +378,7 @@ const Navbar = () => {
 
               <Link
                 to="/cart"
-                onClick={closeMobileMenu}
+                onClick={closeNavigation}
                 className="flex items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm text-gray-700 transition hover:bg-orange-50 hover:text-orange-600"
               >
                 <ShoppingBag size={17} />

@@ -1,6 +1,18 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 import { useCart } from "../Context/CartContext";
+
+const formatPrice = (price: number) =>
+  `${price.toLocaleString("en-RW")} RWF`;
+
+const IMAGE_PLACEHOLDER =
+  "https://placehold.co/400x500?text=PendoHub";
 
 function Cart() {
   const {
@@ -11,12 +23,16 @@ function Cart() {
     cartCount,
   } = useCart();
 
+  // Display a message when the cart is empty.
   if (cartItems.length === 0) {
     return (
       <main className="flex min-h-[60vh] items-center justify-center bg-gray-50 px-4 py-16">
-        <div className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm sm:p-10">
+        <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50">
-            <ShoppingBag size={36} className="text-orange-500" />
+            <ShoppingBag
+              size={36}
+              className="text-orange-500"
+            />
           </div>
 
           <h1 className="mt-6 text-3xl font-bold text-gray-900">
@@ -24,13 +40,13 @@ function Cart() {
           </h1>
 
           <p className="mt-3 leading-6 text-gray-500">
-            Discover your next favorite outfit and find something you love at
-            PendoHub.
+            Discover your next favorite outfit and find
+            something you love at PendoHub.
           </p>
 
           <Link
             to="/shop"
-            className="mt-7 inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-7 py-3 font-semibold text-white transition hover:bg-orange-600"
+            className="mt-7 inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-7 py-3 font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
           >
             <ShoppingBag size={18} />
             Continue Shopping
@@ -44,7 +60,7 @@ function Cart() {
     <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         {/* Page heading */}
-        <div className="mb-8">
+        <header className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
             PendoHub Shopping
           </p>
@@ -54,16 +70,22 @@ function Cart() {
           </h1>
 
           <p className="mt-2 text-gray-500">
-            {cartCount} {cartCount === 1 ? "item" : "items"} in your cart
+            {cartCount}{" "}
+            {cartCount === 1 ? "item" : "items"} in your cart
           </p>
-        </div>
+        </header>
 
         <div className="grid items-start gap-8 lg:grid-cols-3">
-          {/* Cart items */}
-          <section className="space-y-4 lg:col-span-2">
+          {/* Cart products */}
+          <section
+            aria-label="Shopping cart items"
+            className="space-y-4 lg:col-span-2"
+          >
             {cartItems.map((item) => {
               const product = item.product;
-              const isMaxStock = item.quantity >= product.quantity;
+              const stock = product.quantity;
+              const isMaxStock =
+                item.quantity >= stock;
 
               return (
                 <article
@@ -73,12 +95,18 @@ function Cart() {
                   {/* Product image */}
                   <Link
                     to={`/product/${product._id}`}
+                    aria-label={`View ${product.name}`}
                     className="h-32 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100 sm:h-40 sm:w-36"
                   >
                     <img
-                      src={product.imageUrl}
+                      src={product.imageUrl || IMAGE_PLACEHOLDER}
                       alt={product.name}
                       loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src =
+                          IMAGE_PLACEHOLDER;
+                      }}
                       className="h-full w-full object-cover transition duration-300 hover:scale-105"
                     />
                   </Link>
@@ -97,12 +125,14 @@ function Cart() {
                     </Link>
 
                     <p className="mt-2 font-bold text-gray-900">
-                      {product.price.toLocaleString()} RWF
+                      {formatPrice(product.price)}
                     </p>
 
                     <p className="mt-1 text-sm text-gray-500">
                       Item total:{" "}
-                      {(product.price * item.quantity).toLocaleString()} RWF
+                      {formatPrice(
+                        product.price * item.quantity
+                      )}
                     </p>
 
                     {/* Quantity and remove controls */}
@@ -111,7 +141,10 @@ function Cart() {
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(product._id, item.quantity - 1)
+                            updateQuantity(
+                              product._id,
+                              item.quantity - 1
+                            )
                           }
                           disabled={item.quantity <= 1}
                           aria-label={`Decrease quantity of ${product.name}`}
@@ -120,16 +153,22 @@ function Cart() {
                           <Minus size={15} />
                         </button>
 
-                        <span className="min-w-9 text-center text-sm font-semibold">
+                        <span
+                          aria-live="polite"
+                          className="min-w-9 text-center text-sm font-semibold"
+                        >
                           {item.quantity}
                         </span>
 
                         <button
                           type="button"
                           onClick={() =>
-                            updateQuantity(product._id, item.quantity + 1)
+                            updateQuantity(
+                              product._id,
+                              item.quantity + 1
+                            )
                           }
-                          disabled={isMaxStock}
+                          disabled={isMaxStock || stock < 1}
                           aria-label={`Increase quantity of ${product.name}`}
                           className="rounded-r-lg p-2.5 text-gray-700 transition hover:bg-orange-50 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
                         >
@@ -139,17 +178,27 @@ function Cart() {
 
                       <button
                         type="button"
-                        onClick={() => removeFromCart(product._id)}
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 transition hover:text-red-700"
+                        onClick={() =>
+                          removeFromCart(product._id)
+                        }
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 transition hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        aria-label={`Remove ${product.name} from cart`}
                       >
                         <Trash2 size={16} />
                         Remove
                       </button>
                     </div>
 
-                    {isMaxStock && product.quantity > 0 && (
+                    {isMaxStock && stock > 0 && (
                       <p className="mt-2 text-xs text-gray-500">
                         Maximum available stock reached.
+                      </p>
+                    )}
+
+                    {stock < 1 && (
+                      <p className="mt-2 text-xs font-medium text-red-600">
+                        Currently out of stock. Remove this item
+                        to continue.
                       </p>
                     )}
                   </div>
@@ -157,6 +206,7 @@ function Cart() {
               );
             })}
 
+            {/* Return to shop */}
             <Link
               to="/shop"
               className="inline-flex items-center gap-2 pt-3 font-semibold text-gray-700 transition hover:text-orange-600"
@@ -175,16 +225,18 @@ function Cart() {
             <div className="mt-6 space-y-4">
               <div className="flex justify-between gap-4 text-gray-600">
                 <span>
-                  Subtotal ({cartCount} {cartCount === 1 ? "item" : "items"})
+                  Subtotal ({cartCount}{" "}
+                  {cartCount === 1 ? "item" : "items"})
                 </span>
 
                 <span className="text-right font-medium text-gray-900">
-                  {subtotal.toLocaleString()} RWF
+                  {formatPrice(subtotal)}
                 </span>
               </div>
 
               <div className="flex justify-between gap-4 text-gray-600">
                 <span>Shipping</span>
+
                 <span className="text-right text-sm">
                   Calculated at checkout
                 </span>
@@ -197,7 +249,7 @@ function Cart() {
                   </span>
 
                   <span className="text-xl font-bold text-orange-600">
-                    {subtotal.toLocaleString()} RWF
+                    {formatPrice(subtotal)}
                   </span>
                 </div>
               </div>
@@ -205,13 +257,14 @@ function Cart() {
 
             <Link
               to="/checkout"
-              className="mt-7 block rounded-lg bg-orange-500 px-4 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
+              className="mt-7 block rounded-lg bg-orange-500 px-4 py-3 text-center font-semibold text-white transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
             >
               Proceed to Checkout
             </Link>
 
             <p className="mt-4 text-center text-xs leading-5 text-gray-500">
-              Shipping costs will be confirmed at checkout.
+              Your cart is saved in this browser. Checkout and
+              order placement must be implemented separately.
             </p>
           </aside>
         </div>

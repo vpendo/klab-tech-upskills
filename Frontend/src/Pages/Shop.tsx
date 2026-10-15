@@ -1,61 +1,113 @@
-import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  getProducts,
-  type Product,
-} from "../Services/productService";
 import ProductCard from "../Components/ProductCart";
+import type { Product } from "../Types/product";
+
+const sampleProducts: Product[] = [
+  {
+    _id: "sample-1",
+    name: "Classic White Sneakers",
+    description: "Comfortable white sneakers for everyday wear.",
+    category: "Shoes",
+    gender: "Women",
+    price: 25000,
+    quantity: 15,
+    imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600",
+    imagePublicId: "",
+  },
+  {
+    _id: "sample-2",
+    name: "Black Running Sneakers",
+    description: "Lightweight sneakers for an active lifestyle.",
+    category: "Shoes",
+    gender: "Men",
+    price: 30000,
+    quantity: 10,
+    imageUrl: "https://images.unsplash.com/photo-1552346154-21d32810aba3?w=600",
+    imagePublicId: "",
+  },
+  {
+    _id: "sample-3",
+    name: "Casual Denim Jacket",
+    description: "A timeless denim jacket for a casual look.",
+    category: "Clothes",
+    gender: "Women",
+    price: 35000,
+    quantity: 8,
+    imageUrl: "https://images.unsplash.com/photo-1543076447-215ad9ba6923?w=600",
+    imagePublicId: "",
+  },
+  {
+    _id: "sample-4",
+    name: "Classic Casual Shirt",
+    description: "A versatile shirt for everyday style.",
+    category: "Clothes",
+    gender: "Men",
+    price: 20000,
+    quantity: 12,
+    imageUrl: "https://images.unsplash.com/photo-1603252109303-2751441dd157?w=600",
+    imagePublicId: "",
+  },
+  {
+    _id: "sample-5",
+    name: "Everyday Fashion Sneakers",
+    description: "Modern sneakers that pair with any casual outfit.",
+    category: "Shoes",
+    gender: "Women",
+    price: 28000,
+    quantity: 9,
+    imageUrl: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=600",
+    imagePublicId: "",
+  },
+  {
+    _id: "sample-6",
+    name: "Men's Casual Outfit",
+    description: "Comfortable everyday clothing with a modern fit.",
+    category: "Clothes",
+    gender: "Men",
+    price: 32000,
+    quantity: 7,
+    imageUrl: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=600",
+    imagePublicId: "",
+  },
+  {
+    _id: "sample-7",
+    name: "Minimal White Sneakers",
+    description: "Clean, versatile sneakers for everyday outfits.",
+    category: "Shoes",
+    gender: "Men",
+    price: 27000,
+    quantity: 11,
+    imageUrl: "https://images.unsplash.com/photo-1495555961986-6d4c1ecb7be3?w=600",
+    imagePublicId: "",
+  },
+  {
+    _id: "sample-8",
+    name: "Women's Casual Top",
+    description: "A stylish top for casual and smart-casual looks.",
+    category: "Clothes",
+    gender: "Women",
+    price: 18000,
+    quantity: 14,
+    imageUrl: "https://images.unsplash.com/photo-1551163943-3f6a855d1153?w=600",
+    imagePublicId: "",
+  },
+];
 
 function Shop() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [searchParams] = useSearchParams();
-
-  const category = searchParams.get("category");
-  const gender = searchParams.get("gender");
+  const category = searchParams.get("category") ?? "";
+  const gender = searchParams.get("gender") ?? "";
   const search = searchParams.get("search")?.trim() ?? "";
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await getProducts(1, 50);
-
-        if (isMounted) {
-          setProducts(response.products);
-        }
-      } catch {
-        if (isMounted) {
-          setError(
-            "Unable to load products. Please check your backend and try again."
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchProducts();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = sampleProducts.filter((product) => {
     const matchesCategory =
-      !category || product.category === category;
+      !category ||
+      product.category.toLowerCase() === category.toLowerCase();
 
     const matchesGender =
-      !gender || product.gender === gender;
+      !gender ||
+      product.gender.toLowerCase() === gender.toLowerCase();
 
     const query = search.toLowerCase();
 
@@ -73,6 +125,10 @@ function Shop() {
     ? `Search: ${search}`
     : `${gender ? `${gender}'s ` : ""}${category || "Shop All"}`;
 
+  const clearFilters = () => {
+    setSearchParams({});
+  };
+
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
@@ -87,48 +143,47 @@ function Shop() {
         Discover styles you'll love.
       </p>
 
-      {loading ? (
-        <p className="py-16 text-center text-gray-500">
-          Loading products...
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+        <p className="text-sm text-gray-500">
+          {filteredProducts.length}{" "}
+          {filteredProducts.length === 1 ? "product" : "products"} found
         </p>
-      ) : error ? (
-        <div className="py-16 text-center">
-          <p className="text-red-600">{error}</p>
 
+        {(category || gender || search) && (
           <button
             type="button"
-            onClick={() => window.location.reload()}
-            className="mt-4 rounded-lg bg-orange-500 px-5 py-2 font-semibold text-white transition hover:bg-orange-600"
+            onClick={clearFilters}
+            className="text-sm font-semibold text-orange-600 transition hover:text-orange-700 hover:underline"
           >
-            Try Again
+            Clear filters
           </button>
-        </div>
-      ) : filteredProducts.length === 0 ? (
+        )}
+      </div>
+
+      {filteredProducts.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-lg font-semibold text-gray-800">
+          <h2 className="text-lg font-semibold text-gray-800">
             No products found.
-          </p>
+          </h2>
 
           <p className="mt-2 text-sm text-gray-500">
             Try another search or choose a different category.
           </p>
+
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="mt-5 rounded-lg bg-orange-500 px-5 py-2 font-semibold text-white transition hover:bg-orange-600"
+          >
+            View all products
+          </button>
         </div>
       ) : (
-        <>
-          <p className="mt-6 text-sm text-gray-500">
-            {filteredProducts.length}{" "}
-            {filteredProducts.length === 1 ? "product" : "products"} found
-          </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-              />
-            ))}
-          </div>
-        </>
+        <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+          {filteredProducts.map((product) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
       )}
     </main>
   );
