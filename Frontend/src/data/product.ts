@@ -4,19 +4,19 @@ import type { Product } from "../Types/product";
 export const products: Product[] = [
   {
     _id: "1",
-    name: "Classic Sneakers",
+    name: "New Balance",
     description: "Comfortable sneakers for everyday wear.",
     category: "Shoes",
     gender: "Men",
     price: 25000,
     quantity: 10,
     imageUrl:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600",
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_TrQ1-dvkbr3tqfVf3rSsoxBtyUgK_e5E-aiM-Ylc-g&s=10",
     imagePublicId: "",
   },
   {
     _id: "2",
-    name: "Women's Heels",
+    name: "Heels",
     description: "Elegant heels for special occasions.",
     category: "Shoes",
     gender: "Women",
@@ -28,7 +28,7 @@ export const products: Product[] = [
   },
   {
     _id: "3",
-    name: "Denim Jacket",
+    name: "Jacket",
     description: "A timeless jacket for casual outfits.",
     category: "Clothes",
     gender: "Men",

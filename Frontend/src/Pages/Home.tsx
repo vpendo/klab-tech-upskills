@@ -13,7 +13,7 @@ const Home = () => {
       name: "Shoes",
       description: "Step into your next favorite pair.",
       image:
-        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800",
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTEyV-8R1k5IjFMe_KjIC-QF3K11J0SsqSrFimHgJ0NI-6pcsz7-mIOkeM&s=10",
     },
     {
       name: "Clothes",
