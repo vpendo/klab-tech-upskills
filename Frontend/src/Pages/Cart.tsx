@@ -243,11 +243,6 @@ function Cart() {
             >
               Proceed to Checkout
             </Link>
-
-            <p className="mt-4 text-center text-xs leading-5 text-gray-500">
-              Your cart is saved in this browser. Checkout and order
-              placement must be implemented separately.
-            </p>
           </aside>
         </div>
       </div>

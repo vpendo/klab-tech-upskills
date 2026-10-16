@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   ShoppingBag,
-  ShieldCheck,
 } from "lucide-react";
 import { useCart } from "../Context/CartContext";
 
@@ -65,7 +64,7 @@ const Checkout = () => {
           </h1>
 
           <p className="mt-2 text-gray-500">
-            Review your order before completing checkout.
+            Review your order details and total.
           </p>
         </header>
 
@@ -114,29 +113,6 @@ const Checkout = () => {
                 </div>
               ))}
             </section>
-
-            {/* Demo notice */}
-            <section className="rounded-2xl border border-orange-200 bg-orange-50 p-5">
-              <div className="flex items-start gap-3">
-                <ShieldCheck
-                  size={24}
-                  className="mt-1 shrink-0 text-orange-600"
-                />
-
-                <div>
-                  <h2 className="font-bold text-gray-900">
-                    Demo Checkout
-                  </h2>
-
-                  <p className="mt-1 text-sm leading-6 text-gray-600">
-                    You're exploring the PendoHub frontend using local
-                    product data. Online payments and real order placement
-                    are not enabled yet. You do not need to enter payment
-                    details.
-                  </p>
-                </div>
-              </div>
-            </section>
           </div>
 
           {/* Price details */}
@@ -147,9 +123,7 @@ const Checkout = () => {
 
             <div className="mt-6 space-y-4">
               <div className="flex justify-between gap-4 text-gray-600">
-                <span>
-                  Items ({cartCount})
-                </span>
+                <span>Items ({cartCount})</span>
 
                 <span className="text-right">
                   {formatPrice(subtotal)}
@@ -180,7 +154,7 @@ const Checkout = () => {
               disabled
               className="mt-6 w-full cursor-not-allowed rounded-lg bg-gray-300 px-5 py-3 font-semibold text-gray-600"
             >
-              Checkout Coming Soon
+              Order Placement 
             </button>
 
             <Link
