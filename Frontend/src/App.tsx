@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/footer";
@@ -15,12 +15,22 @@ import Checkout from "./Pages/Checkout";
 import ProductDetails from "./Pages/ProductDetails";
 import Wishlist from "./Pages/Wishlist";
 
+// Admin pages
+import AdminDashboard from "./Pages/Dashboard/AdminDashboard";
+import ProductsManagement from "./Pages/Dashboard/ProductsManagement";
+
 const App = () => {
+  const location = useLocation();
+
+  // Hide the store Navbar and Footer on dashboard pages
+  const isDashboard = location.pathname.startsWith("/dashboard");
+
   return (
     <>
-      <Navbar />
+      {!isDashboard && <Navbar />}
 
       <Routes>
+        {/* Public pages */}
         <Route path="/" element={<Home />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<About />} />
@@ -28,11 +38,23 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
+        {/* Shopping pages */}
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/wishlist" element={<Wishlist />} />
 
+        {/* Admin pages */}
+        <Route
+          path="/dashboard/admin"
+          element={<AdminDashboard />}
+        />
+        <Route
+          path="/dashboard/products"
+          element={<ProductsManagement />}
+        />
+
+        {/* 404 page */}
         <Route
           path="*"
           element={
@@ -56,7 +78,7 @@ const App = () => {
         />
       </Routes>
 
-      <Footer />
+      {!isDashboard && <Footer />}
     </>
   );
 };
