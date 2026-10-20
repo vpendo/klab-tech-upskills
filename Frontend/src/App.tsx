@@ -22,11 +22,19 @@ import ProductsManagement from "./Pages/Dashboard/ProductsManagement";
 import Order from "./Pages/Dashboard/Orders";
 import Settings from "./Pages/Dashboard/Settings";
 
+// Customer pages
+import CustomerDashboard from "./Pages/Dashboard/CustomerDashboard";
+import MyOrders from "./Pages/Dashboard/MyOrders";
+import MyProfile from "./Pages/Dashboard/MyProfile";
+import MySettings from "./Pages/Dashboard/MySettings";
+
 const App = () => {
   const location = useLocation();
 
   // Hide the store Navbar and Footer on dashboard pages.
-  const isDashboard = location.pathname.startsWith("/dashboard");
+  const isDashboard =
+    location.pathname.startsWith("/dashboard") ||
+    location.pathname.startsWith("/account");
 
   return (
     <>
@@ -52,20 +60,35 @@ const App = () => {
           path="/dashboard/admin"
           element={<AdminDashboard />}
         />
-
         <Route
           path="/dashboard/products"
           element={<ProductsManagement />}
         />
-
         <Route
           path="/dashboard/orders"
           element={<Order />}
         />
-
         <Route
           path="/dashboard/settings"
           element={<Settings />}
+        />
+
+        {/* Customer dashboard pages */}
+        <Route
+          path="/account"
+          element={<CustomerDashboard />}
+        />
+        <Route
+          path="/account/orders"
+          element={<MyOrders />}
+        />
+        <Route
+          path="/account/profile"
+          element={<MyProfile />}
+        />
+        <Route
+          path="/account/settings"
+          element={<MySettings />}
         />
 
         {/* 404 page */}

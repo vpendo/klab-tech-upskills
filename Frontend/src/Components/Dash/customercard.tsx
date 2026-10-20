@@ -1,3 +1,4 @@
+
 import {
   ShoppingBag,
   Clock3,
@@ -15,6 +16,13 @@ interface DashboardCardProps {
   iconColor?: string;
 }
 
+interface DashboardCardsProps {
+  totalOrders?: number;
+  pendingOrders?: number;
+  deliveredOrders?: number;
+  wishlistItems?: number;
+}
+
 export function DashboardCard({
   title,
   value,
@@ -27,7 +35,6 @@ export function DashboardCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
-
           <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-black">
             {value}
           </h3>
@@ -48,32 +55,37 @@ export function DashboardCard({
   );
 }
 
-export default function DashboardCards() {
+export default function DashboardCards({
+  totalOrders = 0,
+  pendingOrders = 0,
+  deliveredOrders = 0,
+  wishlistItems = 0,
+}: DashboardCardsProps) {
   const cards = [
     {
-      title: "Total Orders",
-      value: 0,
+      title: "My Orders",
+      value: totalOrders,
       icon: ShoppingBag,
       description: "All your orders",
       iconColor: "bg-orange-50 text-orange-500",
     },
     {
       title: "Pending Orders",
-      value: 0,
+      value: pendingOrders,
       icon: Clock3,
       description: "Orders awaiting completion",
       iconColor: "bg-amber-50 text-amber-600",
     },
     {
       title: "Delivered Orders",
-      value: 0,
+      value: deliveredOrders,
       icon: PackageCheck,
       description: "Successfully delivered",
       iconColor: "bg-green-50 text-green-600",
     },
     {
-      title: "Wishlist Items",
-      value: 0,
+      title: "My Wishlist",
+      value: wishlistItems,
       icon: Heart,
       description: "Products saved for later",
       iconColor: "bg-rose-50 text-rose-500",

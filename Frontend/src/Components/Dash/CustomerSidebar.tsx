@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,26 +11,26 @@ import {
   X,
 } from "lucide-react";
 
-interface DashboardSidebarProps {
+interface CustomerSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   onLogout?: () => void;
 }
 
-export default function DashboardSidebar({
-  isOpen = true,
+export default function CustomerSidebar({
+  isOpen = false,
   onClose,
   onLogout,
-}: DashboardSidebarProps) {
+}: CustomerSidebarProps) {
   const links = [
     {
       name: "Dashboard",
-      path: "/dashboard",
+      path: "/account",
       icon: LayoutDashboard,
     },
     {
       name: "My Orders",
-      path: "/dashboard/orders",
+      path: "/account/orders",
       icon: ShoppingBag,
     },
     {
@@ -39,12 +40,12 @@ export default function DashboardSidebar({
     },
     {
       name: "My Profile",
-      path: "/dashboard/profile",
+      path: "/account/profile",
       icon: UserRound,
     },
     {
       name: "Settings",
-      path: "/dashboard/settings",
+      path: "/account/settings",
       icon: Settings,
     },
   ];
@@ -61,14 +62,16 @@ export default function DashboardSidebar({
       )}
 
       <aside
+        aria-label="Customer navigation"
         className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-30 lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* PendoHub logo */}
-        <div className="flex h-20 items-center justify-between border-b border-gray-100 px-5">
+        {/* Brand */}
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-100 px-5">
           <NavLink
-            to="/"
+            to="/account"
+            end
             onClick={onClose}
             className="text-2xl font-extrabold tracking-tight text-black"
           >
@@ -90,23 +93,24 @@ export default function DashboardSidebar({
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
             My Account
           </p>
-
           <h2 className="mt-2 text-lg font-bold text-black">
             Customer Dashboard
           </h2>
-
           <p className="mt-1 text-sm text-gray-500">
             Manage your shopping
           </p>
         </div>
 
-        {/* Navigation links */}
-        <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-5">
+        {/* Navigation */}
+        <nav
+          aria-label="Customer menu"
+          className="flex-1 space-y-2 overflow-y-auto px-3 py-5"
+        >
           {links.map(({ name, path, icon: Icon }) => (
             <NavLink
               key={name}
               to={path}
-              end={path === "/dashboard"}
+              end={path === "/account"}
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
@@ -129,8 +133,8 @@ export default function DashboardSidebar({
           ))}
         </nav>
 
-        {/* Bottom navigation */}
-        <div className="space-y-2 border-t border-gray-100 p-4">
+        {/* Bottom actions */}
+        <div className="shrink-0 space-y-2 border-t border-gray-100 p-4">
           <NavLink
             to="/shop"
             onClick={onClose}
@@ -143,7 +147,7 @@ export default function DashboardSidebar({
           <button
             type="button"
             onClick={onLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-600"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
           >
             <LogOut size={20} />
             <span>Log Out</span>
