@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Menu,
   ShoppingBag,
@@ -15,9 +14,46 @@ import CustomerSidebar from "../../Components/Dash/CustomerSidebar";
 import DashboardCards from "../../Components/Dash/customercard";
 import { useWishlist } from "../../Context/WishlistContext";
 
+interface CustomerUser {
+  id?: string;
+  _id?: string;
+  name?: string;
+  email?: string;
+  role?: "customer" | "admin";
+}
+
 export default function CustomerDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [customerName, setCustomerName] = useState("Customer");
   const { wishlistCount } = useWishlist();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+
+    if (!savedUser) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      const user: CustomerUser = JSON.parse(savedUser);
+
+      if (user.role !== "customer") {
+        navigate(
+          user.role === "admin" ? "/dashboard/admin" : "/login",
+          { replace: true }
+        );
+        return;
+      }
+
+      setCustomerName(user.name?.trim() || "Customer");
+    } catch {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
 
   // Sample orders until real customer order data is available.
   const recentOrders = [
@@ -61,8 +97,9 @@ export default function CustomerDashboard() {
   };
 
   const handleLogout = () => {
-    // Connect this to your authentication logout logic when available.
-    window.location.href = "/login";
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login", { replace: true });
   };
 
   const pendingOrders = recentOrders.filter(
@@ -86,7 +123,6 @@ export default function CustomerDashboard() {
 
       <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
         <div className="mx-auto max-w-7xl space-y-8">
-          {/* Page header */}
           <header className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <button
@@ -122,13 +158,17 @@ export default function CustomerDashboard() {
                 <p className="mb-2 text-sm font-medium text-orange-100">
                   WELCOME TO PENDOHUB
                 </p>
+
                 <h2 className="text-2xl font-bold sm:text-3xl">
-                  Your style, your way.
+                  Welcome, {customerName}!
                 </h2>
+
                 <p className="mt-2 max-w-lg text-sm leading-6 text-orange-50 sm:text-base">
-                  Manage your orders, keep track of deliveries, save your
-                  favorite items, and discover your next look.
+                  Your style, your way. Manage your orders, keep track of
+                  deliveries, save your favorite items, and discover your next
+                  look.
                 </p>
+
                 <Link
                   to="/shop"
                   className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-3 font-semibold text-orange-600 transition hover:bg-orange-50"

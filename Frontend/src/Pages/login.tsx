@@ -7,6 +7,14 @@ const API_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:5000"
 ).replace(/\/+$/, "");
 
+interface LoggedInUser {
+  id?: string;
+  _id?: string;
+  name: string;
+  email: string;
+  role: "customer" | "admin";
+}
+
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,7 +36,10 @@ const Login = () => {
 
     setError("");
 
-    const result = loginSchema.safeParse({ email, password });
+    const result = loginSchema.safeParse({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
     if (!result.success) {
       setError(
@@ -57,18 +68,31 @@ const Login = () => {
         );
       }
 
-      if (!data?.token || !data?.user || !data.user.role) {
-        throw new Error("The server returned an invalid login response.");
+      if (
+        !data?.token ||
+        !data?.user ||
+        typeof data.user.name !== "string" ||
+        !data.user.name.trim() ||
+        typeof data.user.email !== "string" ||
+        !["customer", "admin"].includes(data.user.role)
+      ) {
+        throw new Error(
+          "The server response is missing valid user information. Please check your backend login controller."
+        );
       }
 
-      if (!["customer", "admin"].includes(data.user.role)) {
-        throw new Error("Your account has an invalid user role.");
-      }
+      const user: LoggedInUser = {
+        id: data.user.id || data.user._id,
+        _id: data.user._id,
+        name: data.user.name.trim(),
+        email: data.user.email.trim().toLowerCase(),
+        role: data.user.role,
+      };
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("user", JSON.stringify(user));
 
-      if (data.user.role === "admin") {
+      if (user.role === "admin") {
         navigate("/dashboard/admin", { replace: true });
       } else {
         navigate("/account", { replace: true });
@@ -127,6 +151,7 @@ const Login = () => {
 
             <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 transition-colors focus-within:border-orange-500">
               <Mail size={18} className="shrink-0 text-gray-400" />
+
               <input
                 id="login-email"
                 type="email"
@@ -150,6 +175,7 @@ const Login = () => {
 
             <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 transition-colors focus-within:border-orange-500">
               <Lock size={18} className="shrink-0 text-gray-400" />
+
               <input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
@@ -160,6 +186,7 @@ const Login = () => {
                 required
                 className="w-full py-3 text-sm outline-none"
               />
+
               <button
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}

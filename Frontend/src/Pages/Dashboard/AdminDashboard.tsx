@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -36,6 +35,12 @@ interface DemoOrder {
   items: number;
   total: number;
   status: OrderStatus;
+}
+
+interface LoggedInUser {
+  name?: string;
+  email?: string;
+  role?: "customer" | "admin";
 }
 
 const demoOrders: DemoOrder[] = [
@@ -116,8 +121,38 @@ function getStoredProducts(): Product[] {
 export default function AdminDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>(getStoredProducts);
+  const [adminName, setAdminName] = useState("Admin");
+  const [adminEmail, setAdminEmail] = useState("");
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+
+    if (!savedUser || !localStorage.getItem("token")) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      const user: LoggedInUser = JSON.parse(savedUser);
+
+      if (user.role !== "admin") {
+        navigate(
+          user.role === "customer" ? "/account" : "/login",
+          { replace: true }
+        );
+        return;
+      }
+
+      setAdminName(user.name?.trim() || "Admin");
+      setAdminEmail(user.email?.trim() || "");
+    } catch {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const refreshProducts = () => {
@@ -195,6 +230,8 @@ export default function AdminDashboard() {
   ];
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
 
@@ -211,8 +248,8 @@ export default function AdminDashboard() {
         <AdminHeader
           title="Admin Dashboard"
           subtitle="Manage your fashion store in one place."
-          adminName="Store Admin"
-          adminEmail="Administrator"
+          adminName={adminName}
+          adminEmail={adminEmail || "Administrator"}
           onMenuClick={() => setMenuOpen(true)}
           onLogout={handleLogout}
         />
@@ -225,7 +262,7 @@ export default function AdminDashboard() {
               </p>
 
               <h2 className="text-2xl font-bold sm:text-3xl">
-                Welcome back, Admin!
+                Welcome back, {adminName}!
               </h2>
 
               <p className="mt-2 max-w-lg text-sm leading-6 text-gray-300">
@@ -383,10 +420,7 @@ export default function AdminDashboard() {
                   ))
                 ) : (
                   <div className="py-6 text-center">
-                    <Boxes
-                      size={30}
-                      className="mx-auto text-green-600"
-                    />
+                    <Boxes size={30} className="mx-auto text-green-600" />
                     <p className="mt-3 text-sm font-semibold">
                       Stock looks good!
                     </p>
@@ -409,7 +443,7 @@ export default function AdminDashboard() {
           <section>
             <h2 className="mb-4 text-lg font-bold">Quick Actions</h2>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Link
                 to="/dashboard/products"
                 className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
