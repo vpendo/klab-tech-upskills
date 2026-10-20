@@ -12,6 +12,7 @@ import {
   Shirt,
   Eye,
   Boxes,
+  Settings,
 } from "lucide-react";
 
 import { products as initialProducts } from "../../data/product";
@@ -37,7 +38,6 @@ interface DemoOrder {
   status: OrderStatus;
 }
 
-// Sample orders until the order API is connected.
 const demoOrders: DemoOrder[] = [
   {
     id: "PH-1005",
@@ -119,7 +119,6 @@ export default function AdminDashboard() {
 
   const navigate = useNavigate();
 
-  // Refresh products when product management saves changes.
   useEffect(() => {
     const refreshProducts = () => {
       setProducts(getStoredProducts());
@@ -134,7 +133,6 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // Derived product and sample-order statistics.
   const lowStockProducts = products.filter(
     (product) => product.quantity <= 5
   );
@@ -196,16 +194,12 @@ export default function AdminDashboard() {
     },
   ];
 
-  // Connect this callback to your real authentication logout logic.
   const handleLogout = () => {
-    // Clear your authentication session here.
-    // Do not remove unrelated cart or wishlist data.
     navigate("/login", { replace: true });
   };
 
   return (
     <div className="min-h-screen bg-[#f8f7f5] text-gray-900 lg:flex">
-      {/* Admin navigation */}
       <AdminSidebar
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -213,7 +207,6 @@ export default function AdminDashboard() {
         pendingOrders={pendingOrders}
       />
 
-      {/* Main dashboard */}
       <div className="min-w-0 flex-1">
         <AdminHeader
           title="Admin Dashboard"
@@ -225,7 +218,6 @@ export default function AdminDashboard() {
         />
 
         <main className="mx-auto max-w-[1600px] space-y-8 p-4 sm:p-6 lg:p-8">
-          {/* Welcome banner */}
           <section className="flex flex-col justify-between gap-5 rounded-2xl bg-[#201b18] p-6 text-white sm:flex-row sm:items-center sm:p-8">
             <div>
               <p className="mb-2 text-sm font-semibold tracking-wide text-orange-300">
@@ -251,7 +243,6 @@ export default function AdminDashboard() {
             </Link>
           </section>
 
-          {/* Statistics */}
           <section>
             <div className="mb-5">
               <h2 className="text-lg font-bold">Store Overview</h2>
@@ -274,7 +265,6 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          {/* Recent orders and stock alerts */}
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white xl:col-span-2">
               <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5">
@@ -350,7 +340,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Low stock */}
             <div className="rounded-2xl border border-gray-200 bg-white">
               <div className="flex items-center gap-3 border-b border-gray-100 p-5">
                 <div className="rounded-xl bg-amber-100 p-2.5 text-amber-700">
@@ -417,11 +406,10 @@ export default function AdminDashboard() {
             </div>
           </section>
 
-          {/* Quick actions */}
           <section>
             <h2 className="mb-4 text-lg font-bold">Quick Actions</h2>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2">
               <Link
                 to="/dashboard/products"
                 className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
@@ -476,6 +464,27 @@ export default function AdminDashboard() {
                   <p className="font-semibold">View Store</p>
                   <p className="mt-1 text-xs text-gray-500">
                     Browse the customer-facing store.
+                  </p>
+                </div>
+
+                <ArrowRight
+                  size={18}
+                  className="shrink-0 text-gray-400 group-hover:text-orange-600"
+                />
+              </Link>
+
+              <Link
+                to="/dashboard/settings"
+                className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
+              >
+                <div className="rounded-xl bg-orange-100 p-3 text-orange-600">
+                  <Settings size={23} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">Store Settings</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Manage store details and preferences.
                   </p>
                 </div>
 

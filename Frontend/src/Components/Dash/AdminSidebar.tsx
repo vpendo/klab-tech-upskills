@@ -54,19 +54,27 @@ export default function AdminSidebar({
     },
   ];
 
+  const closeSidebar = () => {
+    onClose?.();
+  };
+
   return (
     <>
+      {/* Mobile backdrop */}
       {isOpen && (
         <button
           type="button"
-          aria-label="Close sidebar"
-          onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          aria-label="Close navigation menu"
+          onClick={closeSidebar}
+          className="fixed inset-0 z-40 cursor-default bg-black/50 lg:hidden"
         />
       )}
 
+      {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-30 lg:translate-x-0 ${
+        id="admin-sidebar"
+        aria-label="Admin navigation"
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:z-30 lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -74,23 +82,24 @@ export default function AdminSidebar({
         <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-100 px-5">
           <NavLink
             to="/dashboard/admin"
-            onClick={onClose}
+            onClick={closeSidebar}
             className="text-2xl font-black tracking-tight text-black"
+            aria-label="PendoHub admin dashboard"
           >
             PENDO<span className="text-orange-500">HUB</span>
           </NavLink>
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={closeSidebar}
             aria-label="Close sidebar"
-            className="rounded-lg p-2 text-gray-500 hover:bg-orange-50 hover:text-orange-600 lg:hidden"
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-orange-50 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 lg:hidden"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Admin identity */}
+        {/* Workspace information */}
         <div className="mx-4 mt-5 rounded-xl bg-orange-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">
             Workspace
@@ -103,8 +112,11 @@ export default function AdminSidebar({
           </p>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-6">
+        {/* Navigation links */}
+        <nav
+          className="flex-1 space-y-1 overflow-y-auto px-3 py-6"
+          aria-label="Main menu"
+        >
           <p className="mb-3 px-3 text-xs font-bold uppercase tracking-widest text-gray-400">
             Main menu
           </p>
@@ -114,9 +126,9 @@ export default function AdminSidebar({
               key={name}
               to={path}
               end={path === "/dashboard/admin"}
-              onClick={onClose}
+              onClick={closeSidebar}
               className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
+                `group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 ${
                   isActive
                     ? "bg-orange-500 text-white shadow-sm"
                     : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
@@ -125,23 +137,30 @@ export default function AdminSidebar({
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={20} />
+                  <Icon size={20} aria-hidden="true" />
+
                   <span className="flex-1">{name}</span>
 
-                  {name === "Orders" && badge !== undefined && badge > 0 && (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
-                        isActive
-                          ? "bg-white text-orange-600"
-                          : "bg-orange-100 text-orange-700"
-                      }`}
-                    >
-                      {badge}
-                    </span>
-                  )}
+                  {name === "Orders" &&
+                    badge !== undefined &&
+                    badge > 0 && (
+                      <span
+                        aria-label={`${badge} pending orders`}
+                        className={`min-w-6 rounded-full px-2 py-0.5 text-center text-xs font-bold ${
+                          isActive
+                            ? "bg-white text-orange-600"
+                            : "bg-orange-100 text-orange-700"
+                        }`}
+                      >
+                        {badge > 99 ? "99+" : badge}
+                      </span>
+                    )}
 
                   {isActive && (
-                    <ChevronRight size={16} />
+                    <ChevronRight
+                      size={16}
+                      aria-hidden="true"
+                    />
                   )}
                 </>
               )}
@@ -153,19 +172,19 @@ export default function AdminSidebar({
         <div className="shrink-0 space-y-2 border-t border-gray-100 p-4">
           <NavLink
             to="/shop"
-            onClick={onClose}
-            className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-600"
+            onClick={closeSidebar}
+            className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
           >
-            <Store size={19} />
+            <Store size={19} aria-hidden="true" />
             <span>View Store</span>
           </NavLink>
 
           <button
             type="button"
             onClick={onLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
           >
-            <LogOut size={19} />
+            <LogOut size={19} aria-hidden="true" />
             <span>Log Out</span>
           </button>
         </div>

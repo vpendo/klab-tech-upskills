@@ -1,4 +1,5 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+
+import { Routes, Route, useLocation, Link } from "react-router-dom";
 
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/footer";
@@ -18,11 +19,13 @@ import Wishlist from "./Pages/Wishlist";
 // Admin pages
 import AdminDashboard from "./Pages/Dashboard/AdminDashboard";
 import ProductsManagement from "./Pages/Dashboard/ProductsManagement";
+import Order from "./Pages/Dashboard/Orders";
+import Settings from "./Pages/Dashboard/Settings";
 
 const App = () => {
   const location = useLocation();
 
-  // Hide the store Navbar and Footer on dashboard pages
+  // Hide the store Navbar and Footer on dashboard pages.
   const isDashboard = location.pathname.startsWith("/dashboard");
 
   return (
@@ -44,14 +47,25 @@ const App = () => {
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/wishlist" element={<Wishlist />} />
 
-        {/* Admin pages */}
+        {/* Admin dashboard pages */}
         <Route
           path="/dashboard/admin"
           element={<AdminDashboard />}
         />
+
         <Route
           path="/dashboard/products"
           element={<ProductsManagement />}
+        />
+
+        <Route
+          path="/dashboard/orders"
+          element={<Order />}
+        />
+
+        <Route
+          path="/dashboard/settings"
+          element={<Settings />}
         />
 
         {/* 404 page */}
@@ -59,20 +73,25 @@ const App = () => {
           path="*"
           element={
             <main className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <p className="text-sm font-bold uppercase tracking-widest text-orange-600">
+                PendoHub
+              </p>
+
+              <h1 className="mt-3 text-3xl font-bold text-gray-900">
                 404 - Page Not Found
               </h1>
 
-              <p className="mt-2 text-gray-500">
-                Sorry, the page you are looking for does not exist.
+              <p className="mt-2 max-w-md text-gray-500">
+                Sorry, the page you are looking for does not exist
+                or may have been moved.
               </p>
 
-              <a
-                href="/"
-                className="mt-5 rounded-lg bg-orange-600 px-5 py-2 font-semibold text-white hover:bg-orange-700"
+              <Link
+                to="/"
+                className="mt-5 rounded-lg bg-orange-600 px-5 py-3 font-semibold text-white transition hover:bg-orange-700"
               >
                 Back to Home
-              </a>
+              </Link>
             </main>
           }
         />

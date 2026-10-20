@@ -1,9 +1,4 @@
-type OrderStatus =
-  | "Pending"
-  | "Processing"
-  | "Shipped"
-  | "Delivered"
-  | "Cancelled";
+import type { OrderStatus } from "./OrderTable";
 
 interface OrderStatusBadgeProps {
   status: OrderStatus;
