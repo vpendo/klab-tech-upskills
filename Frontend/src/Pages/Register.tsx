@@ -9,6 +9,11 @@ import {
   EyeOff,
   ArrowRight,
 } from "lucide-react";
+import { registerSchema } from "../schemas/auth.schema";
+
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
 export default function Register() {
   const navigate = useNavigate();
@@ -18,27 +23,66 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (loading) return;
+
     setError("");
 
-    if (name.trim().length < 2) {
-      setError("Please enter your full name.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
-    // Frontend demo only: no account is saved.
-    navigate("/login", {
-      state: {
-        message: "Registration form completed. Connect a backend to create your account.",
-      },
+    // Validate the form with Zod
+    const result = registerSchema.safeParse({
+      name,
+      email,
+      password,
     });
+
+    if (!result.success) {
+      setError(result.error.issues[0]?.message || "Please check your details.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(result.data),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || "Registration failed. Please try again."
+        );
+      }
+
+      navigate("/login", {
+        state: {
+          message: "Your account has been created. You can now log in.",
+        },
+      });
+    } catch (err) {
+      if (err instanceof TypeError) {
+        setError(
+          "Unable to connect to the server. Please check your connection and try again."
+        );
+      } else {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -89,7 +133,6 @@ export default function Register() {
                 type="text"
                 autoComplete="name"
                 required
-                minLength={2}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 placeholder="Enter your full name"
@@ -131,20 +174,16 @@ export default function Register() {
             </label>
 
             <div className="flex items-center gap-3 rounded-lg border border-gray-300 px-4 transition focus-within:border-orange-600">
-              <LockKeyhole
-                size={19}
-                className="shrink-0 text-gray-400"
-              />
+              <LockKeyhole size={19} className="shrink-0 text-gray-400" />
 
               <input
                 id="register-password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
-                minLength={6}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 className="h-12 w-full bg-transparent text-sm outline-none"
               />
 
@@ -161,10 +200,11 @@ export default function Register() {
 
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 font-semibold text-white transition hover:bg-orange-700"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Create Account
-            <ArrowRight size={19} />
+            {loading ? "Creating account..." : "Create Account"}
+            {!loading && <ArrowRight size={19} />}
           </button>
         </form>
 

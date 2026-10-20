@@ -15,6 +15,8 @@ import Cart from "./Pages/Cart";
 import Checkout from "./Pages/Checkout";
 import ProductDetails from "./Pages/ProductDetails";
 import Wishlist from "./Pages/Wishlist";
+import ForgotPassword from "./Pages/ForgotPassword";
+import ResetPassword from "./Pages/ResetPassword";
 
 // Admin pages
 import AdminDashboard from "./Pages/Dashboard/AdminDashboard";
@@ -48,6 +50,8 @@ const App = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Shopping pages */}
         <Route path="/cart" element={<Cart />} />

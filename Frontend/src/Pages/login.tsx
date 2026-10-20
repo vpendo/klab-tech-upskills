@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { loginSchema } from "../schemas/auth.schema";
 
 const API_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:5000"
@@ -8,6 +9,7 @@ const API_URL = (
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,12 +17,27 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const successMessage = (
+    location.state as { message?: string } | null
+  )?.message;
+
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (loading) return;
 
     setError("");
+
+    const result = loginSchema.safeParse({ email, password });
+
+    if (!result.success) {
+      setError(
+        result.error.issues[0]?.message ||
+          "Please check your email and password."
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -29,10 +46,7 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password,
-        }),
+        body: JSON.stringify(result.data),
       });
 
       const data = await response.json().catch(() => null);
@@ -43,14 +57,22 @@ const Login = () => {
         );
       }
 
-      if (!data?.token || !data?.user) {
+      if (!data?.token || !data?.user || !data.user.role) {
         throw new Error("The server returned an invalid login response.");
+      }
+
+      if (!["customer", "admin"].includes(data.user.role)) {
+        throw new Error("Your account has an invalid user role.");
       }
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      navigate("/");
+      if (data.user.role === "admin") {
+        navigate("/dashboard/admin", { replace: true });
+      } else {
+        navigate("/account", { replace: true });
+      }
     } catch (err) {
       if (err instanceof TypeError) {
         setError(
@@ -85,6 +107,15 @@ const Login = () => {
           </p>
         </div>
 
+        {successMessage && (
+          <p
+            role="status"
+            className="mb-5 rounded-lg bg-green-50 p-3 text-sm text-green-700"
+          >
+            {successMessage}
+          </p>
+        )}
+
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label
@@ -96,7 +127,6 @@ const Login = () => {
 
             <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 transition-colors focus-within:border-orange-500">
               <Mail size={18} className="shrink-0 text-gray-400" />
-
               <input
                 id="login-email"
                 type="email"
@@ -120,7 +150,6 @@ const Login = () => {
 
             <div className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 transition-colors focus-within:border-orange-500">
               <Lock size={18} className="shrink-0 text-gray-400" />
-
               <input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
@@ -131,7 +160,6 @@ const Login = () => {
                 required
                 className="w-full py-3 text-sm outline-none"
               />
-
               <button
                 type="button"
                 onClick={() => setShowPassword((visible) => !visible)}
@@ -145,6 +173,7 @@ const Login = () => {
             <div className="mt-2 text-right">
               <Link
                 to="/forgot-password"
+                state={{ email }}
                 className="text-sm font-medium text-orange-500 hover:text-orange-600"
               >
                 Forgot password?

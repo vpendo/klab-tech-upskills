@@ -1,5 +1,7 @@
+
 import express from "express";
 import dotenv from "dotenv";
+import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 
 import productRouter from "./router/product.router";
@@ -10,8 +12,16 @@ import swaggerSpec from "./config/swagger";
 dotenv.config();
 
 const app = express();
-
 const port = process.env.PORT || 5000;
+
+// Allow requests from the React frontend
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Middleware
 app.use(express.json());

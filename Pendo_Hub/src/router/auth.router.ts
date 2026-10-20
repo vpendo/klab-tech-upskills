@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import {
   register,
@@ -27,18 +28,25 @@ const AuthRoute = Router();
  *             properties:
  *               name:
  *                 type: string
- *                 example: pendo
+ *                 minLength: 2
+ *                 maxLength: 80
+ *                 example: Pendo Vestine
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: pendo@gmail.com
  *               password:
  *                 type: string
- *                 example: "123456"
+ *                 minLength: 8
+ *                 maxLength: 72
+ *                 example: "PendoHub123"
  *     responses:
  *       201:
  *         description: User registered successfully
  *       400:
- *         description: Missing fields or user already exists
+ *         description: Invalid registration data
+ *       409:
+ *         description: Email already exists
  *       500:
  *         description: Server error
  */
@@ -62,15 +70,17 @@ AuthRoute.post("/register", register);
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: pendo@gmail.com
  *               password:
  *                 type: string
- *                 example: "123456"
+ *                 minLength: 1
+ *                 example: "PendoHub123"
  *     responses:
  *       200:
- *         description: Login successful, returns a token and the user
+ *         description: Login successful, returns a token and user
  *       400:
- *         description: Email and password are required
+ *         description: Invalid login data
  *       401:
  *         description: Invalid email or password
  *       500:
@@ -82,7 +92,7 @@ AuthRoute.post("/login", login);
  * @swagger
  * /api/auth/forgot-password:
  *   post:
- *     summary: Send an OTP to the user's email for password reset
+ *     summary: Send an OTP for password reset
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -95,12 +105,13 @@ AuthRoute.post("/login", login);
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: pendo@gmail.com
  *     responses:
  *       200:
  *         description: Reset code sent to your email
  *       400:
- *         description: Email is required
+ *         description: Invalid email
  *       404:
  *         description: User not found
  *       500:
@@ -127,20 +138,22 @@ AuthRoute.post("/forgot-password", forgotPassword);
  *             properties:
  *               email:
  *                 type: string
+ *                 format: email
  *                 example: pendo@gmail.com
  *               otp:
  *                 type: string
+ *                 pattern: '^[0-9]{6}$'
  *                 example: "123456"
  *               newPassword:
  *                 type: string
- *                 example: "newpassword123"
+ *                 minLength: 8
+ *                 maxLength: 72
+ *                 example: "NewPendoHub123"
  *     responses:
  *       200:
  *         description: Password reset successful
  *       400:
- *         description: Missing fields, invalid OTP, expired OTP, or password too short
- *       404:
- *         description: User not found
+ *         description: Invalid reset data, OTP, or expired OTP
  *       500:
  *         description: Failed to reset password
  */
