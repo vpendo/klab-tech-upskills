@@ -8,6 +8,7 @@ import productRouter from "./router/product.router";
 import authRouter from "./router/auth.router";
 import CartRoute from "./router/cart.router";
 import WishlistRoute from "./router/wishlist.router";
+import OrderRoute from "./router/order.router";
 
 import { connectDB } from "./config/db";
 import swaggerSpec from "./config/swagger";
@@ -17,7 +18,7 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT) || 5000;
 
-// Allow requests from the React frontend
+// Allow requests from the React frontend.
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -26,36 +27,39 @@ app.use(
   })
 );
 
-// Middleware
+// Middleware.
 app.use(express.json());
 
-// Home route
+// Home route.
 app.get("/", (_req, res) => {
   res.json({
     message: "Welcome to Pendo Hub API",
   });
 });
 
-// Authentication routes
+// Authentication routes.
 app.use("/api/auth", authRouter);
 
-// Product routes
+// Product routes.
 app.use("/api", productRouter);
 
-// Customer cart routes
+// Customer cart routes.
 app.use("/api", CartRoute);
 
-// Customer wishlist routes
+// Customer wishlist routes.
 app.use("/api", WishlistRoute);
 
-// Swagger documentation
+// Customer and admin order routes.
+app.use("/api", OrderRoute);
+
+// Swagger documentation.
 app.use(
   "/api-docs",
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec)
 );
 
-// Connect to MongoDB before starting the server
+// Connect to MongoDB before starting the server.
 const startServer = async (): Promise<void> => {
   try {
     await connectDB();
