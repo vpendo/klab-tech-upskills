@@ -1,6 +1,7 @@
-
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { LayoutDashboard, ArrowLeft } from "lucide-react";
+
 import ProductCard from "../Components/ProductCart";
 import { getProducts } from "../services/productService";
 import type { Product } from "../Types/product";
@@ -16,6 +17,23 @@ function Shop() {
   const gender = searchParams.get("gender") ?? "";
   const search = searchParams.get("search")?.trim() ?? "";
 
+  // Identify a logged-in customer without redirecting them away from the shop.
+  const isCustomer = (() => {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (!token || !savedUser) {
+      return false;
+    }
+
+    try {
+      const user = JSON.parse(savedUser);
+      return user.role === "customer";
+    } catch {
+      return false;
+    }
+  })();
+
   useEffect(() => {
     let cancelled = false;
 
@@ -24,7 +42,6 @@ function Shop() {
       setError("");
 
       try {
-        // Fetch products saved in MongoDB.
         const response = await getProducts({ limit: 50 });
 
         if (!cancelled) {
@@ -81,7 +98,29 @@ function Shop() {
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        {/* Customer navigation */}
+        {isCustomer && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600"
+            >
+              <ArrowLeft size={18} />
+              Back to Dashboard
+            </Link>
+
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 transition hover:text-orange-700"
+            >
+              <LayoutDashboard size={18} />
+              My Account
+            </Link>
+          </div>
+        )}
+
+        {/* Page heading */}
         <header className="border-b border-gray-100 pb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             {pageTitle}
@@ -92,7 +131,8 @@ function Shop() {
           </p>
         </header>
 
-        <div className="flex items-center justify-between py-7">
+        {/* Product count and filters */}
+        <div className="flex items-center justify-between gap-4 py-7">
           <p className="text-sm text-gray-500">
             <span className="font-semibold text-gray-900">
               {loading ? "..." : filteredProducts.length}
@@ -111,13 +151,16 @@ function Shop() {
           )}
         </div>
 
+        {/* Loading state */}
         {loading ? (
           <div className="py-16 text-center">
-            <p className="text-sm text-gray-500">
+            <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-orange-100 border-t-orange-600" />
+            <p className="mt-4 text-sm text-gray-500">
               Loading products...
             </p>
           </div>
         ) : error ? (
+          /* Error state */
           <div className="py-16 text-center">
             <h2 className="text-lg font-semibold">
               Unable to load products
@@ -136,6 +179,7 @@ function Shop() {
             </button>
           </div>
         ) : filteredProducts.length === 0 ? (
+          /* Empty state */
           <div className="py-16 text-center">
             <h2 className="text-lg font-semibold">
               No products found.
@@ -154,6 +198,7 @@ function Shop() {
             </button>
           </div>
         ) : (
+          /* Product grid */
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-6">
             {filteredProducts.map((product) => (
               <ProductCard
@@ -161,6 +206,19 @@ function Shop() {
                 product={product}
               />
             ))}
+          </div>
+        )}
+
+        {/* Return to dashboard at the bottom */}
+        {isCustomer && !loading && !error && (
+          <div className="mt-12 flex justify-center border-t border-gray-100 pt-8">
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+            >
+              <LayoutDashboard size={18} />
+              Return to My Dashboard
+            </Link>
           </div>
         )}
       </div>

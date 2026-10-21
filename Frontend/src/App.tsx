@@ -34,7 +34,7 @@ import MySettings from "./Pages/Dashboard/MySettings";
 const App = () => {
   const location = useLocation();
 
-  // Hide the store Navbar and Footer on dashboard pages.
+  // Hide the public store Navbar and Footer on dashboard pages.
   const isDashboard =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/account");
@@ -49,18 +49,20 @@ const App = () => {
         <Route path="/shop" element={<Shop />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
+
+        {/* Authentication pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* General shopping pages */}
+        {/* Shopping pages */}
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/wishlist" element={<Wishlist />} />
 
-        {/* Admin dashboard pages */}
+        {/* Admin dashboard */}
         <Route
           path="/dashboard/admin"
           element={<AdminDashboard />}
@@ -78,7 +80,7 @@ const App = () => {
           element={<Settings />}
         />
 
-        {/* Customer dashboard pages */}
+        {/* Customer dashboard */}
         <Route
           path="/account"
           element={<CustomerDashboard />}
@@ -123,10 +125,10 @@ const App = () => {
               </p>
 
               <Link
-                to="/"
+                to="/shop"
                 className="mt-5 rounded-lg bg-orange-600 px-5 py-3 font-semibold text-white transition hover:bg-orange-700"
               >
-                Back to Home
+                Browse Products
               </Link>
             </main>
           }

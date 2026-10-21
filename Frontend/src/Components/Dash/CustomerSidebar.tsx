@@ -99,9 +99,11 @@ export default function CustomerSidebar({
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
             My Account
           </p>
+
           <h2 className="mt-2 text-lg font-bold text-black">
             Customer Dashboard
           </h2>
+
           <p className="mt-1 text-sm text-gray-500">
             Manage your shopping
           </p>
@@ -144,7 +146,7 @@ export default function CustomerSidebar({
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-600"
           >
             <Store size={20} />
-            <span>Continue Shopping</span>
+            <span>Shop Products</span>
           </NavLink>
 
           <button

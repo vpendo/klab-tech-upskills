@@ -27,6 +27,7 @@ interface CustomerUser {
 export default function CustomerDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [customerName, setCustomerName] = useState("Customer");
+  const [authChecked, setAuthChecked] = useState(false);
 
   const { cartCount, refreshCart } = useCart();
   const { wishlistCount, refreshWishlist } = useWishlist();
@@ -54,6 +55,7 @@ export default function CustomerDashboard() {
       }
 
       setCustomerName(user.name?.trim() || "Customer");
+      setAuthChecked(true);
 
       void refreshCart();
       void refreshWishlist();
@@ -69,6 +71,19 @@ export default function CustomerDashboard() {
     localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+          <p className="mt-3 text-sm text-gray-600">
+            Loading your dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 lg:flex">
@@ -102,10 +117,10 @@ export default function CustomerDashboard() {
 
             <Link
               to="/shop"
-              className="hidden items-center gap-2 rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 sm:flex"
+              className="hidden items-center gap-2 rounded-lg bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 sm:inline-flex"
             >
               <ShoppingBag size={18} />
-              Continue Shopping
+              Shop Products
             </Link>
           </header>
 
@@ -169,7 +184,6 @@ export default function CustomerDashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {/* My Cart */}
               <Link
                 to="/account/cart"
                 className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
@@ -191,7 +205,6 @@ export default function CustomerDashboard() {
                 </span>
               </Link>
 
-              {/* My Wishlist */}
               <Link
                 to="/account/wishlist"
                 className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-pink-200 hover:shadow-md"
@@ -213,7 +226,6 @@ export default function CustomerDashboard() {
                 </span>
               </Link>
 
-              {/* My Orders */}
               <Link
                 to="/account/orders"
                 className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
@@ -233,7 +245,6 @@ export default function CustomerDashboard() {
                 </span>
               </Link>
 
-              {/* Track Orders */}
               <Link
                 to="/account/orders"
                 className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
@@ -253,7 +264,6 @@ export default function CustomerDashboard() {
                 </span>
               </Link>
 
-              {/* My Profile */}
               <Link
                 to="/account/profile"
                 className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-purple-200 hover:shadow-md"
