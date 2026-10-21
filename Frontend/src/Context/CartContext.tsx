@@ -35,6 +35,10 @@ interface CartResponse {
   message?: string;
 }
 
+interface StoredUser {
+  role?: string;
+}
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const getErrorMessage = (error: unknown): string => {
@@ -45,7 +49,40 @@ const getErrorMessage = (error: unknown): string => {
     );
   }
 
+  if (error instanceof Error) {
+    return error.message;
+  }
+
   return "Unable to update your cart. Please try again.";
+};
+
+// Only logged-in customers can access cart actions.
+const checkCustomerAccess = (): void => {
+  const token = localStorage.getItem("token");
+  const savedUser = localStorage.getItem("user");
+
+  if (!token || !savedUser) {
+    throw new Error("Please log in to access your cart.");
+  }
+
+  try {
+    const user = JSON.parse(savedUser) as StoredUser;
+
+    if (user.role !== "customer") {
+      throw new Error("Only customers can access the shopping cart.");
+    }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Only customers can access the shopping cart."
+    ) {
+      throw error;
+    }
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    throw new Error("Your session is invalid. Please log in again.");
+  }
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -55,7 +92,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Load the logged-in customer's cart from the backend.
   const refreshCart = useCallback(async () => {
-    if (!localStorage.getItem("token")) {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (!token || !savedUser) {
+      setCartItems([]);
+      setCartLoading(false);
+      setCartError("");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(savedUser) as StoredUser;
+
+      if (user.role !== "customer") {
+        setCartItems([]);
+        setCartLoading(false);
+        setCartError("");
+        return;
+      }
+    } catch {
       setCartItems([]);
       setCartLoading(false);
       setCartError("");
@@ -82,19 +138,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Add a product to the backend cart.
   const addToCart = async (product: Product, quantity = 1) => {
-    if (!localStorage.getItem("token")) {
-      setCartError("Please log in to add products to your cart.");
-      return;
-    }
-
-    if (!product._id || !Number.isInteger(quantity) || quantity < 1) {
-      setCartError("Please select a valid product quantity.");
-      return;
-    }
-
-    setCartError("");
-
     try {
+      checkCustomerAccess();
+
+      if (!product._id || !Number.isInteger(quantity) || quantity < 1) {
+        throw new Error("Please select a valid product quantity.");
+      }
+
+      setCartError("");
+
       await api.post("/api/cart/items", {
         productId: product._id,
         quantity,
@@ -102,16 +154,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       await refreshCart();
     } catch (error) {
-      setCartError(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setCartError(message);
       console.error("Add cart item error:", error);
+
+      // Let the component know the action failed.
+      throw new Error(message);
     }
   };
 
   // Remove a product from the backend cart.
   const removeFromCart = async (productId: string) => {
-    setCartError("");
-
     try {
+      checkCustomerAccess();
+      setCartError("");
+
       await api.delete(
         `/api/cart/items/${encodeURIComponent(productId)}`
       );
@@ -120,21 +177,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
         items.filter((item) => item.product._id !== productId)
       );
     } catch (error) {
-      setCartError(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setCartError(message);
       console.error("Remove cart item error:", error);
+      throw new Error(message);
     }
   };
 
-  // Update the quantity of a product in the backend cart.
+  // Update a product quantity in the backend cart.
   const updateQuantity = async (productId: string, quantity: number) => {
-    if (!Number.isInteger(quantity) || quantity < 1) {
-      setCartError("Quantity must be at least 1.");
-      return;
-    }
-
-    setCartError("");
-
     try {
+      checkCustomerAccess();
+
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        throw new Error("Quantity must be at least 1.");
+      }
+
+      setCartError("");
+
       await api.patch(
         `/api/cart/items/${encodeURIComponent(productId)}`,
         { quantity }
@@ -142,22 +202,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       await refreshCart();
     } catch (error) {
-      setCartError(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setCartError(message);
       console.error("Update cart quantity error:", error);
+      throw new Error(message);
     }
   };
 
   // Clear the backend cart.
   const clearCart = async () => {
-    setCartError("");
-
     try {
+      checkCustomerAccess();
+      setCartError("");
+
       await api.delete("/api/cart");
       setCartItems([]);
     } catch (error) {
-      setCartError(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setCartError(message);
       console.error("Clear cart error:", error);
+
       await refreshCart();
+      throw new Error(message);
     }
   };
 

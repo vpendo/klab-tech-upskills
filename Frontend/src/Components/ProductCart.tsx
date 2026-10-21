@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ShoppingCart,
   ArrowUpRight,
@@ -14,11 +14,19 @@ interface ProductCardProps {
   product: Product;
 }
 
+interface StoredUser {
+  role?: string;
+}
+
 function ProductCard({ product }: ProductCardProps) {
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
   const [added, setAdded] = useState(false);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   const isOutOfStock = product.quantity <= 0;
   const isWishlisted = isInWishlist(product._id);
@@ -33,15 +41,74 @@ function ProductCard({ product }: ProductCardProps) {
     return () => window.clearTimeout(timeout);
   }, [added]);
 
-  const handleAddToCart = () => {
-    if (isOutOfStock) return;
+  const checkCustomerAccess = (): boolean => {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
 
-    addToCart(product);
-    setAdded(true);
+    if (!token || !savedUser) {
+      navigate("/login");
+      return false;
+    }
+
+    let user: StoredUser;
+
+    try {
+      user = JSON.parse(savedUser) as StoredUser;
+    } catch {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login");
+      return false;
+    }
+
+    if (user.role !== "customer") {
+      if (user.role === "admin") {
+        navigate("/dashboard/admin");
+      } else {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      }
+
+      return false;
+    }
+
+    return true;
   };
 
-  const handleWishlist = () => {
-    toggleWishlist(product);
+  const handleAddToCart = async () => {
+    setActionError("");
+
+    if (!checkCustomerAccess()) return;
+    if (isOutOfStock || cartLoading) return;
+
+    setCartLoading(true);
+    setAdded(false);
+
+    try {
+      await addToCart(product);
+      setAdded(true);
+    } catch {
+      setActionError("Could not add this product to your cart. Please try again.");
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
+  const handleWishlist = async () => {
+    setActionError("");
+
+    if (!checkCustomerAccess() || wishlistLoading) return;
+
+    setWishlistLoading(true);
+
+    try {
+      await toggleWishlist(product);
+    } catch {
+      setActionError("Could not update your wishlist. Please try again.");
+    } finally {
+      setWishlistLoading(false);
+    }
   };
 
   return (
@@ -75,10 +142,10 @@ function ProductCard({ product }: ProductCardProps) {
           </span>
         </Link>
 
-        {/* Wishlist heart button */}
         <button
           type="button"
           onClick={handleWishlist}
+          disabled={wishlistLoading}
           aria-label={
             isWishlisted
               ? `Remove ${product.name} from wishlist`
@@ -86,7 +153,7 @@ function ProductCard({ product }: ProductCardProps) {
           }
           aria-pressed={isWishlisted}
           title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md transition hover:scale-110 active:scale-95"
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md transition hover:scale-110 active:scale-95 disabled:cursor-wait disabled:opacity-60"
         >
           <Heart
             size={20}
@@ -124,14 +191,22 @@ function ProductCard({ product }: ProductCardProps) {
             : `${product.quantity} available`}
         </p>
 
+        {actionError && (
+          <p role="alert" className="mt-2 text-sm text-red-600">
+            {actionError}
+          </p>
+        )}
+
         <button
           type="button"
           onClick={handleAddToCart}
-          disabled={isOutOfStock}
+          disabled={isOutOfStock || cartLoading}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
         >
           {isOutOfStock ? (
             "Unavailable"
+          ) : cartLoading ? (
+            "Adding..."
           ) : added ? (
             <>
               <Check size={18} />

@@ -28,6 +28,10 @@ interface WishlistResponse {
   message?: string;
 }
 
+interface StoredUser {
+  role?: string;
+}
+
 const WishlistContext = createContext<
   WishlistContextType | undefined
 >(undefined);
@@ -44,7 +48,35 @@ const getErrorMessage = (error: unknown): string => {
     );
   }
 
+  if (error instanceof Error) {
+    return error.message;
+  }
+
   return "Unable to update your wishlist. Please try again.";
+};
+
+// Only logged-in customers can use the wishlist.
+const checkCustomerAccess = (): void => {
+  const token = localStorage.getItem("token");
+  const savedUser = localStorage.getItem("user");
+
+  if (!token || !savedUser) {
+    throw new Error("Please log in to access your wishlist.");
+  }
+
+  let user: StoredUser;
+
+  try {
+    user = JSON.parse(savedUser) as StoredUser;
+  } catch {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    throw new Error("Your session is invalid. Please log in again.");
+  }
+
+  if (user.role !== "customer") {
+    throw new Error("Only customers can access the wishlist.");
+  }
 };
 
 export const WishlistProvider = ({
@@ -54,9 +86,28 @@ export const WishlistProvider = ({
   const [wishlistLoading, setWishlistLoading] = useState(true);
   const [wishlistError, setWishlistError] = useState("");
 
-  // Load the logged-in customer's wishlist from MongoDB through the API.
+  // Load the logged-in customer's wishlist from the backend.
   const refreshWishlist = useCallback(async () => {
-    if (!localStorage.getItem("token")) {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (!token || !savedUser) {
+      setWishlistItems([]);
+      setWishlistLoading(false);
+      setWishlistError("");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(savedUser) as StoredUser;
+
+      if (user.role !== "customer") {
+        setWishlistItems([]);
+        setWishlistLoading(false);
+        setWishlistError("");
+        return;
+      }
+    } catch {
       setWishlistItems([]);
       setWishlistLoading(false);
       setWishlistError("");
@@ -67,7 +118,10 @@ export const WishlistProvider = ({
     setWishlistError("");
 
     try {
-      const response = await api.get<WishlistResponse>("/api/wishlist");
+      const response = await api.get<WishlistResponse>(
+        "/api/wishlist"
+      );
+
       setWishlistItems(response.data.products ?? []);
     } catch (error) {
       setWishlistError(getErrorMessage(error));
@@ -81,32 +135,37 @@ export const WishlistProvider = ({
     void refreshWishlist();
   }, [refreshWishlist]);
 
-  // Add a product to the customer's MongoDB wishlist.
+  // Add a product to the customer's wishlist.
   const addToWishlist = async (product: Product) => {
-    if (!localStorage.getItem("token")) {
-      setWishlistError("Please log in to save products to your wishlist.");
-      return;
-    }
-
-    setWishlistError("");
-
     try {
+      checkCustomerAccess();
+
+      if (!product._id) {
+        throw new Error("Invalid product.");
+      }
+
+      setWishlistError("");
+
       await api.post("/api/wishlist/items", {
         productId: product._id,
       });
 
       await refreshWishlist();
     } catch (error) {
-      setWishlistError(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setWishlistError(message);
       console.error("Add wishlist item error:", error);
+
+      throw new Error(message);
     }
   };
 
-  // Remove a product from the customer's MongoDB wishlist.
+  // Remove a product from the customer's wishlist.
   const removeFromWishlist = async (productId: string) => {
-    setWishlistError("");
-
     try {
+      checkCustomerAccess();
+      setWishlistError("");
+
       await api.delete(
         `/api/wishlist/items/${encodeURIComponent(productId)}`
       );
@@ -115,21 +174,32 @@ export const WishlistProvider = ({
         currentItems.filter((item) => item._id !== productId)
       );
     } catch (error) {
-      setWishlistError(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setWishlistError(message);
       console.error("Remove wishlist item error:", error);
+
+      throw new Error(message);
     }
   };
 
-  // Toggle a product's wishlist status.
+  // Add or remove a product from the wishlist.
   const toggleWishlist = async (product: Product) => {
-    const alreadyExists = wishlistItems.some(
-      (item) => item._id === product._id
-    );
+    try {
+      checkCustomerAccess();
 
-    if (alreadyExists) {
-      await removeFromWishlist(product._id);
-    } else {
-      await addToWishlist(product);
+      const alreadyExists = wishlistItems.some(
+        (item) => item._id === product._id
+      );
+
+      if (alreadyExists) {
+        await removeFromWishlist(product._id);
+      } else {
+        await addToWishlist(product);
+      }
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setWishlistError(message);
+      throw new Error(message);
     }
   };
 
@@ -137,13 +207,14 @@ export const WishlistProvider = ({
   const isInWishlist = (productId: string) =>
     wishlistItems.some((item) => item._id === productId);
 
-  // Clear the wishlist using the existing backend delete endpoint.
+  // Clear the wishlist using the existing backend endpoints.
   const clearWishlist = async () => {
-    setWishlistError("");
-
-    const currentItems = [...wishlistItems];
-
     try {
+      checkCustomerAccess();
+      setWishlistError("");
+
+      const currentItems = [...wishlistItems];
+
       for (const product of currentItems) {
         await api.delete(
           `/api/wishlist/items/${encodeURIComponent(product._id)}`
@@ -152,9 +223,12 @@ export const WishlistProvider = ({
 
       setWishlistItems([]);
     } catch (error) {
-      setWishlistError(getErrorMessage(error));
+      const message = getErrorMessage(error);
+      setWishlistError(message);
       console.error("Clear wishlist error:", error);
+
       await refreshWishlist();
+      throw new Error(message);
     }
   };
 

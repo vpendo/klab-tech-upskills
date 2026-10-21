@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, ArrowLeft, Check } from "lucide-react";
 import { useCart } from "../Context/CartContext";
 import { getProductById } from "../services/productService";
@@ -8,6 +8,7 @@ import type { Product } from "../Types/product";
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { addToCart } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -15,6 +16,7 @@ const ProductDetails = () => {
   const [error, setError] = useState("");
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +43,9 @@ const ProductDetails = () => {
         }
       } catch {
         if (!cancelled) {
-          setError("We couldn't load this product. It may no longer be available.");
+          setError(
+            "We couldn't load this product. It may no longer be available."
+          );
         }
       } finally {
         if (!cancelled) {
@@ -57,11 +61,45 @@ const ProductDetails = () => {
     };
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (!product || product.quantity <= 0) return;
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
 
-    addToCart(product);
-    setAdded(true);
+    if (!token || !savedUser) {
+      navigate("/login");
+      return;
+    }
+
+    let user: { role?: string };
+
+    try {
+      user = JSON.parse(savedUser);
+    } catch {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      navigate("/login");
+      return;
+    }
+
+    if (user.role !== "customer") {
+      navigate(user.role === "admin" ? "/dashboard/admin" : "/login");
+      return;
+    }
+
+    if (!product || product.quantity <= 0 || adding) {
+      return;
+    }
+
+    setAdding(true);
+
+    try {
+      await addToCart(product);
+      setAdded(true);
+    } catch (error) {
+      console.error("Failed to add product to cart:", error);
+    } finally {
+      setAdding(false);
+    }
   };
 
   if (loading) {
@@ -150,9 +188,7 @@ const ProductDetails = () => {
 
             <p
               className={`mt-6 text-sm font-medium ${
-                product.quantity > 0
-                  ? "text-green-700"
-                  : "text-red-600"
+                product.quantity > 0 ? "text-green-700" : "text-red-600"
               }`}
             >
               {product.quantity > 0
@@ -163,9 +199,9 @@ const ProductDetails = () => {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={product.quantity <= 0}
+              disabled={product.quantity <= 0 || adding}
               className={`mt-5 flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3.5 font-semibold text-white transition sm:w-auto ${
-                product.quantity <= 0
+                product.quantity <= 0 || adding
                   ? "cursor-not-allowed bg-gray-300"
                   : added
                     ? "bg-green-700 hover:bg-green-800"
@@ -174,6 +210,8 @@ const ProductDetails = () => {
             >
               {product.quantity <= 0 ? (
                 "Out of Stock"
+              ) : adding ? (
+                "Adding..."
               ) : added ? (
                 <>
                   <Check size={20} />
