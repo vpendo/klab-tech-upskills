@@ -1,12 +1,12 @@
-
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Heart,
   ShoppingCart,
   Trash2,
   ArrowRight,
+  ArrowLeft,
   LoaderCircle,
 } from "lucide-react";
 import api from "../services/api";
@@ -48,24 +48,23 @@ const getErrorMessage = (error: unknown): string => {
 
 const Wishlist = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Identify when the wishlist is opened from the customer dashboard.
+  const isCustomerPage = location.pathname.startsWith("/account/");
 
   const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionLoading, setActionLoading] = useState<string | null>(
-    null
-  );
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Load the logged-in customer's wishlist
+  // Load the logged-in customer's wishlist.
   const fetchWishlist = useCallback(async () => {
     setError("");
 
     try {
-      const response = await api.get<WishlistResponse>(
-        "/api/wishlist"
-      );
-
+      const response = await api.get<WishlistResponse>("/api/wishlist");
       setWishlistItems(response.data.products ?? []);
     } catch (err) {
       if (
@@ -73,7 +72,28 @@ const Wishlist = () => {
         (err.response?.status === 401 ||
           err.response?.status === 403)
       ) {
-        navigate("/login", { replace: true });
+        const savedUser = localStorage.getItem("user");
+
+        if (!localStorage.getItem("token")) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        try {
+          const user = savedUser ? JSON.parse(savedUser) : null;
+
+          if (user?.role === "admin") {
+            navigate("/dashboard/admin", { replace: true });
+            return;
+          }
+        } catch {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        setError("You are not authorized to access the customer wishlist.");
         return;
       }
 
@@ -84,7 +104,27 @@ const Wishlist = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!localStorage.getItem("token")) {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (!token || !savedUser) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      const user = JSON.parse(savedUser);
+
+      if (user.role !== "customer") {
+        navigate(
+          user.role === "admin" ? "/dashboard/admin" : "/login",
+          { replace: true }
+        );
+        return;
+      }
+    } catch {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
       navigate("/login", { replace: true });
       return;
     }
@@ -92,7 +132,7 @@ const Wishlist = () => {
     void fetchWishlist();
   }, [fetchWishlist, navigate]);
 
-  // Remove a product from the wishlist
+  // Remove one product from the wishlist.
   const removeFromWishlist = async (productId: string) => {
     setActionLoading(productId);
     setError("");
@@ -115,7 +155,7 @@ const Wishlist = () => {
     }
   };
 
-  // Clear the wishlist by removing each saved product
+  // Clear the wishlist by removing each saved product.
   const clearWishlist = async () => {
     if (wishlistItems.length === 0) return;
 
@@ -143,7 +183,7 @@ const Wishlist = () => {
     }
   };
 
-  // Add a saved product to the backend cart
+  // Add a saved product to the backend cart.
   const addToCart = async (product: Product) => {
     if (product.quantity <= 0) return;
 
@@ -184,6 +224,38 @@ const Wishlist = () => {
   return (
     <section className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
+        {/* Navigation */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          {isCustomerPage ? (
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-white px-4 py-2.5 text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
+            >
+              <ArrowLeft size={18} />
+              Back to Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/shop"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+            >
+              <ArrowLeft size={18} />
+              Continue Shopping
+            </Link>
+          )}
+
+          {isCustomerPage && (
+            <Link
+              to="/account/cart"
+              className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
+            >
+              <ShoppingCart size={18} />
+              My Cart
+            </Link>
+          )}
+        </div>
+
+        {/* Wishlist heading */}
         <div className="mb-8 flex items-center gap-3">
           <Heart
             size={30}
@@ -247,10 +319,10 @@ const Wishlist = () => {
             </p>
 
             <Link
-              to="/shop"
+              to={isCustomerPage ? "/account" : "/shop"}
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700"
             >
-              Continue Shopping
+              {isCustomerPage ? "Back to Dashboard" : "Continue Shopping"}
               <ArrowRight size={18} />
             </Link>
           </div>
@@ -288,9 +360,7 @@ const Wishlist = () => {
 
                       <button
                         type="button"
-                        onClick={() =>
-                          void removeFromWishlist(product._id)
-                        }
+                        onClick={() => void removeFromWishlist(product._id)}
                         disabled={actionLoading !== null}
                         aria-label={`Remove ${product.name} from wishlist`}
                         title="Remove from wishlist"
@@ -333,8 +403,7 @@ const Wishlist = () => {
                         type="button"
                         onClick={() => void addToCart(product)}
                         disabled={
-                          product.quantity <= 0 ||
-                          actionLoading !== null
+                          product.quantity <= 0 || actionLoading !== null
                         }
                         className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-orange-600 px-3 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                       >
@@ -356,17 +425,12 @@ const Wishlist = () => {
 
                       <button
                         type="button"
-                        onClick={() =>
-                          void removeFromWishlist(product._id)
-                        }
+                        onClick={() => void removeFromWishlist(product._id)}
                         disabled={actionLoading !== null}
                         className="mt-3 w-full text-sm font-medium text-gray-500 transition hover:text-red-600 disabled:opacity-50"
                       >
                         Remove
-                        <Trash2
-                          size={14}
-                          className="ml-1 inline"
-                        />
+                        <Trash2 size={14} className="ml-1 inline" />
                       </button>
                     </div>
                   </article>

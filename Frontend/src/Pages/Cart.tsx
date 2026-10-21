@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import {
   ArrowLeft,
+  ArrowRight,
   Minus,
   Plus,
   ShoppingBag,
+  ShoppingCart,
+  Heart,
   Trash2,
   LoaderCircle,
   RefreshCw,
@@ -19,6 +26,9 @@ const IMAGE_PLACEHOLDER =
 
 function Cart() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isCustomerPage = location.pathname.startsWith("/account/");
 
   const {
     cartItems,
@@ -31,27 +41,97 @@ function Cart() {
     removeFromCart,
   } = useCart();
 
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Only logged-in customers can use the cart.
   useEffect(() => {
-    if (!localStorage.getItem("token")) {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (!token || !savedUser) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      const user = JSON.parse(savedUser);
+
+      if (user.role !== "customer") {
+        navigate(
+          user.role === "admin" ? "/dashboard/admin" : "/login",
+          { replace: true }
+        );
+        return;
+      }
+
+      setAuthChecked(true);
+    } catch {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       navigate("/login", { replace: true });
     }
   }, [navigate]);
 
-  if (!localStorage.getItem("token")) {
-    return null;
+  if (!authChecked) {
+    return (
+      <main className="flex min-h-[60vh] items-center justify-center bg-gray-50">
+        <LoaderCircle
+          size={36}
+          className="animate-spin text-orange-500"
+        />
+      </main>
+    );
   }
+
+  const navigationLinks = (
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      {isCustomerPage ? (
+        <Link
+          to="/account"
+          className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-white px-4 py-2.5 text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
+        >
+          <ArrowLeft size={18} />
+          Back to Dashboard
+        </Link>
+      ) : (
+        <Link
+          to="/shop"
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+        >
+          <ArrowLeft size={18} />
+          Continue Shopping
+        </Link>
+      )}
+
+      {isCustomerPage && (
+        <Link
+          to="/account/wishlist"
+          className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
+        >
+          <Heart size={18} />
+          My Wishlist
+        </Link>
+      )}
+    </div>
+  );
 
   if (cartLoading) {
     return (
-      <main className="flex min-h-[60vh] items-center justify-center bg-gray-50 px-4">
-        <div className="text-center">
-          <LoaderCircle
-            size={36}
-            className="mx-auto animate-spin text-orange-500"
-          />
-          <p className="mt-4 font-medium text-gray-600">
-            Loading your shopping cart...
-          </p>
+      <main className="min-h-[60vh] bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          {navigationLinks}
+
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <div className="text-center">
+              <LoaderCircle
+                size={36}
+                className="mx-auto animate-spin text-orange-500"
+              />
+              <p className="mt-4 font-medium text-gray-600">
+                Loading your shopping cart...
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -59,47 +139,63 @@ function Cart() {
 
   if (cartItems.length === 0) {
     return (
-      <main className="flex min-h-[60vh] items-center justify-center bg-gray-50 px-4 py-16">
-        <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50">
-            <ShoppingBag size={36} className="text-orange-500" />
-          </div>
+      <main className="min-h-[60vh] bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          {navigationLinks}
 
-          <h1 className="mt-6 text-3xl font-bold text-gray-900">
-            {cartError ? "Unable to load your cart" : "Your cart is empty"}
-          </h1>
+          <div className="flex min-h-[50vh] items-center justify-center">
+            <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50">
+                <ShoppingBag
+                  size={36}
+                  className="text-orange-500"
+                />
+              </div>
 
-          <p className="mt-3 leading-6 text-gray-500">
-            {cartError
-              ? "We couldn't retrieve your cart. Please try again."
-              : "Discover your next favorite outfit at PendoHub."}
-          </p>
+              <h1 className="mt-6 text-3xl font-bold text-gray-900">
+                {cartError
+                  ? "Unable to load your cart"
+                  : "Your cart is empty"}
+              </h1>
 
-          {cartError && (
-            <div role="alert" className="mt-4 text-sm text-red-600">
-              {cartError}
+              <p className="mt-3 leading-6 text-gray-500">
+                {cartError
+                  ? "We couldn't retrieve your cart. Please try again."
+                  : "Discover your next favorite outfit at PendoHub."}
+              </p>
+
+              {cartError && (
+                <div
+                  role="alert"
+                  className="mt-4 text-sm text-red-600"
+                >
+                  {cartError}
+                </div>
+              )}
+
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                {cartError && (
+                  <button
+                    type="button"
+                    onClick={() => void refreshCart()}
+                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    <RefreshCw size={17} />
+                    Try Again
+                  </button>
+                )}
+
+                <Link
+                  to={isCustomerPage ? "/account" : "/shop"}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
+                >
+                  {isCustomerPage
+                    ? "Back to Dashboard"
+                    : "Continue Shopping"}
+                  <ArrowRight size={18} />
+                </Link>
+              </div>
             </div>
-          )}
-
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            {cartError && (
-              <button
-                type="button"
-                onClick={() => void refreshCart()}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50"
-              >
-                <RefreshCw size={17} />
-                Try Again
-              </button>
-            )}
-
-            <Link
-              to="/shop"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-7 py-3 font-semibold text-white transition hover:bg-orange-600"
-            >
-              <ShoppingBag size={18} />
-              Continue Shopping
-            </Link>
           </div>
         </div>
       </main>
@@ -109,6 +205,8 @@ function Cart() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
+        {navigationLinks}
+
         <header className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
             PendoHub Shopping
@@ -261,6 +359,7 @@ function Cart() {
                 <span>
                   Subtotal ({cartCount} {cartCount === 1 ? "item" : "items"})
                 </span>
+
                 <span className="text-right font-medium text-gray-900">
                   {formatPrice(subtotal)}
                 </span>
@@ -275,7 +374,9 @@ function Cart() {
 
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="font-bold text-gray-900">Subtotal</span>
+                  <span className="font-bold text-gray-900">
+                    Subtotal
+                  </span>
                   <span className="text-xl font-bold text-orange-600">
                     {formatPrice(subtotal)}
                   </span>
