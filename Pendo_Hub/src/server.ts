@@ -12,7 +12,7 @@ import swaggerSpec from "./config/swagger";
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = Number(process.env.PORT) || 5000;
 
 // Allow requests from the React frontend
 app.use(
@@ -27,7 +27,7 @@ app.use(
 app.use(express.json());
 
 // Home route
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.json({
     message: "Welcome to Pendo Hub API",
   });
@@ -46,11 +46,19 @@ app.use(
   swaggerUi.setup(swaggerSpec)
 );
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB before starting the server
+const startServer = async (): Promise<void> => {
+  try {
+    await connectDB();
 
-// Start server
-app.listen(port, () => {
-  console.log(`Pendo Hub server running on port ${port}`);
-  console.log(`Swagger UI: http://localhost:${port}/api-docs`);
-});
+    app.listen(port, () => {
+      console.log(`Pendo Hub server running on port ${port}`);
+      console.log(`Swagger UI: http://localhost:${port}/api-docs`);
+    });
+  } catch (error) {
+    console.error("Failed to start Pendo Hub server:", error);
+    process.exit(1);
+  }
+};
+
+void startServer();

@@ -1,13 +1,56 @@
+
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import ProductCard from "../Components/ProductCart";
-import { products } from "../data/product";
+import { getProducts } from "../services/productService";
+import type { Product } from "../Types/product";
 
 function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const category = searchParams.get("category") ?? "";
   const gender = searchParams.get("gender") ?? "";
   const search = searchParams.get("search")?.trim() ?? "";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProducts() {
+      setLoading(true);
+      setError("");
+
+      try {
+        // Fetch products saved in MongoDB.
+        const response = await getProducts({ limit: 50 });
+
+        if (!cancelled) {
+          setProducts(response.products);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(
+            "We couldn't load products. Please check your connection and try again."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadProducts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const query = search.toLowerCase();
 
   const filteredProducts = products.filter((product) => {
     const matchesCategory =
@@ -17,8 +60,6 @@ function Shop() {
     const matchesGender =
       !gender ||
       product.gender.toLowerCase() === gender.toLowerCase();
-
-    const query = search.toLowerCase();
 
     const matchesSearch =
       !query ||
@@ -54,7 +95,7 @@ function Shop() {
         <div className="flex items-center justify-between py-7">
           <p className="text-sm text-gray-500">
             <span className="font-semibold text-gray-900">
-              {filteredProducts.length}
+              {loading ? "..." : filteredProducts.length}
             </span>{" "}
             {filteredProducts.length === 1 ? "product" : "products"} found
           </p>
@@ -70,7 +111,31 @@ function Shop() {
           )}
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <div className="py-16 text-center">
+            <p className="text-sm text-gray-500">
+              Loading products...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center">
+            <h2 className="text-lg font-semibold">
+              Unable to load products
+            </h2>
+
+            <p className="mt-2 text-sm text-gray-500">
+              {error}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-5 rounded-lg bg-orange-700 px-5 py-2.5 font-semibold text-white transition hover:bg-orange-800"
+            >
+              Try again
+            </button>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="py-16 text-center">
             <h2 className="text-lg font-semibold">
               No products found.
@@ -91,7 +156,10 @@ function Shop() {
         ) : (
           <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-6">
             {filteredProducts.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <ProductCard
+                key={product._id}
+                product={product}
+              />
             ))}
           </div>
         )}

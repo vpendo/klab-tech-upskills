@@ -1,21 +1,60 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ShoppingCart, ArrowLeft, Check } from "lucide-react";
 import { useCart } from "../Context/CartContext";
-import { products } from "../data/product";
+import { getProductById } from "../services/productService";
+import type { Product } from "../Types/product";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
 
-  const product = products.find((item) => item._id === id);
-
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [added, setAdded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    setAdded(false);
-    setImageError(false);
+    let cancelled = false;
+
+    async function loadProduct() {
+      if (!id) {
+        setProduct(null);
+        setError("A product ID was not provided.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+      setProduct(null);
+      setAdded(false);
+      setImageError(false);
+
+      try {
+        const result = await getProductById(id);
+
+        if (!cancelled) {
+          setProduct(result);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("We couldn't load this product. It may no longer be available.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadProduct();
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleAddToCart = () => {
@@ -25,7 +64,15 @@ const ProductDetails = () => {
     setAdded(true);
   };
 
-  if (!product) {
+  if (loading) {
+    return (
+      <main className="flex min-h-[50vh] items-center justify-center px-4">
+        <p className="text-gray-500">Loading product...</p>
+      </main>
+    );
+  }
+
+  if (error || !product) {
     return (
       <main className="flex min-h-[50vh] flex-col items-center justify-center px-4 py-12 text-center">
         <h1 className="text-2xl font-bold text-gray-900">
@@ -33,7 +80,7 @@ const ProductDetails = () => {
         </h1>
 
         <p className="mt-2 text-gray-500">
-          This product may no longer be available.
+          {error || "This product may no longer be available."}
         </p>
 
         <Link
@@ -50,7 +97,6 @@ const ProductDetails = () => {
   return (
     <main className="min-h-screen bg-white text-gray-900">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        {/* Back to shop */}
         <Link
           to="/shop"
           className="mb-8 inline-flex items-center gap-2 text-sm text-gray-600 transition hover:text-orange-600"
@@ -59,9 +105,7 @@ const ProductDetails = () => {
           Back to Shop
         </Link>
 
-        {/* Product details */}
         <div className="grid items-start gap-8 md:grid-cols-2 md:gap-12">
-          {/* Product image */}
           <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-gray-50">
             {imageError || !product.imageUrl ? (
               <div className="p-6 text-center text-gray-500">
@@ -81,7 +125,6 @@ const ProductDetails = () => {
             )}
           </div>
 
-          {/* Product information */}
           <div className="py-2 md:py-5">
             <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
               {product.gender} / {product.category}
@@ -105,7 +148,6 @@ const ProductDetails = () => {
               {product.description}
             </p>
 
-            {/* Stock status */}
             <p
               className={`mt-6 text-sm font-medium ${
                 product.quantity > 0
@@ -118,7 +160,6 @@ const ProductDetails = () => {
                 : "Out of stock"}
             </p>
 
-            {/* Add to cart */}
             <button
               type="button"
               onClick={handleAddToCart}

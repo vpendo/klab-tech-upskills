@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Package,
@@ -12,9 +13,14 @@ import {
   Eye,
   Boxes,
   Settings,
+  RefreshCw,
 } from "lucide-react";
 
-import { products as initialProducts } from "../../data/product";
+import {
+  getProducts,
+  getProductStats,
+  type ProductStats,
+} from "../../services/productService";
 import type { Product } from "../../Types/product";
 
 import AdminSidebar from "../../Components/Dash/AdminSidebar";
@@ -86,9 +92,6 @@ const demoOrders: DemoOrder[] = [
   },
 ];
 
-const PRODUCTS_STORAGE_KEY = "pendohub-products";
-const PRODUCTS_UPDATED_EVENT = "pendohub-products-updated";
-
 const formatPrice = (price: number) =>
   `${price.toLocaleString("en-RW")} RWF`;
 
@@ -100,36 +103,27 @@ const statusStyles: Record<OrderStatus, string> = {
   Cancelled: "bg-red-100 text-red-800",
 };
 
-function getStoredProducts(): Product[] {
-  try {
-    const savedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
-
-    if (savedProducts !== null) {
-      const parsedProducts: unknown = JSON.parse(savedProducts);
-
-      if (Array.isArray(parsedProducts)) {
-        return parsedProducts as Product[];
-      }
-    }
-  } catch {
-    console.error("Unable to load saved PendoHub products.");
-  }
-
-  return initialProducts;
-}
-
 export default function AdminDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [products, setProducts] = useState<Product[]>(getStoredProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productStats, setProductStats] = useState<ProductStats>({
+    totalProducts: 0,
+    totalStock: 0,
+    averagePrice: 0,
+  });
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState("");
   const [adminName, setAdminName] = useState("Admin");
   const [adminEmail, setAdminEmail] = useState("");
 
   const navigate = useNavigate();
 
+  // Check authentication and make sure only admins can access this page.
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
 
-    if (!savedUser || !localStorage.getItem("token")) {
+    if (!savedUser || !token) {
       navigate("/login", { replace: true });
       return;
     }
@@ -154,29 +148,38 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    const refreshProducts = () => {
-      setProducts(getStoredProducts());
-    };
+  // Load products and inventory statistics from the backend.
+  const loadDashboardProducts = useCallback(async () => {
+    setProductsLoading(true);
+    setProductsError("");
 
-    window.addEventListener(PRODUCTS_UPDATED_EVENT, refreshProducts);
-    window.addEventListener("storage", refreshProducts);
+    try {
+      const [productResponse, statsResponse] = await Promise.all([
+        getProducts({ page: 1, limit: 50 }),
+        getProductStats(),
+      ]);
 
-    return () => {
-      window.removeEventListener(PRODUCTS_UPDATED_EVENT, refreshProducts);
-      window.removeEventListener("storage", refreshProducts);
-    };
+      setProducts(productResponse.products);
+      setProductStats(statsResponse);
+    } catch (error) {
+      console.error("Failed to load dashboard products:", error);
+      setProductsError(
+        "Unable to load product information. Check your backend connection and try again."
+      );
+    } finally {
+      setProductsLoading(false);
+    }
   }, []);
 
-  const lowStockProducts = products.filter(
-    (product) => product.quantity <= 5
-  );
+  useEffect(() => {
+    void loadDashboardProducts();
+  }, [loadDashboardProducts]);
 
-  const totalStock = products.reduce(
-    (total, product) => total + product.quantity,
-    0
-  );
+  const lowStockProducts = products
+    .filter((product) => product.quantity <= 5)
+    .sort((a, b) => a.quantity - b.quantity);
 
+  // These order calculations are still based on demonstration data.
   const activeOrders = demoOrders.filter(
     (order) =>
       order.status !== "Delivered" &&
@@ -194,14 +197,18 @@ export default function AdminDashboard() {
   const stats = [
     {
       title: "Total Products",
-      value: products.length.toLocaleString("en-RW"),
+      value: productsLoading
+        ? "..."
+        : productStats.totalProducts.toLocaleString("en-RW"),
       description: "Products in your catalog",
       icon: Package,
       iconClassName: "bg-orange-100 text-orange-600",
     },
     {
       title: "Total Stock",
-      value: totalStock.toLocaleString("en-RW"),
+      value: productsLoading
+        ? "..."
+        : productStats.totalStock.toLocaleString("en-RW"),
       description: "Items available across products",
       icon: Boxes,
       iconClassName: "bg-purple-100 text-purple-600",
@@ -255,6 +262,23 @@ export default function AdminDashboard() {
         />
 
         <main className="mx-auto max-w-[1600px] space-y-8 p-4 sm:p-6 lg:p-8">
+          {productsError && (
+            <div
+              role="alert"
+              className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p>{productsError}</p>
+              <button
+                type="button"
+                onClick={() => void loadDashboardProducts()}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 font-semibold hover:bg-red-100"
+              >
+                <RefreshCw size={16} />
+                Try again
+              </button>
+            </div>
+          )}
+
           <section className="flex flex-col justify-between gap-5 rounded-2xl bg-[#201b18] p-6 text-white sm:flex-row sm:items-center sm:p-8">
             <div>
               <p className="mb-2 text-sm font-semibold tracking-wide text-orange-300">
@@ -271,20 +295,35 @@ export default function AdminDashboard() {
               </p>
             </div>
 
-            <Link
-              to="/dashboard/products"
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-600"
-            >
-              <Plus size={18} />
-              Add New Product
-            </Link>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => void loadDashboardProducts()}
+                disabled={productsLoading}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw
+                  size={17}
+                  className={productsLoading ? "animate-spin" : ""}
+                />
+                Refresh Data
+              </button>
+
+              <Link
+                to="/dashboard/products"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-600"
+              >
+                <Plus size={18} />
+                Add New Product
+              </Link>
+            </div>
           </section>
 
           <section>
             <div className="mb-5">
               <h2 className="text-lg font-bold">Store Overview</h2>
               <p className="mt-1 text-sm text-gray-500">
-                A summary of your store's current activity.
+                Product figures are loaded from your database. Order figures are sample data.
               </p>
             </div>
 
@@ -392,7 +431,15 @@ export default function AdminDashboard() {
               </div>
 
               <div className="space-y-4 p-5">
-                {lowStockProducts.length > 0 ? (
+                {productsLoading ? (
+                  <p className="py-6 text-center text-sm text-gray-500">
+                    Loading inventory...
+                  </p>
+                ) : productsError ? (
+                  <p className="py-6 text-center text-sm text-red-600">
+                    Inventory could not be loaded.
+                  </p>
+                ) : lowStockProducts.length > 0 ? (
                   lowStockProducts.slice(0, 5).map((product) => (
                     <div
                       key={product._id}
@@ -425,7 +472,7 @@ export default function AdminDashboard() {
                       Stock looks good!
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      No products have 5 or fewer items.
+                      No products have 5 or fewer items in the loaded list.
                     </p>
                   </div>
                 )}

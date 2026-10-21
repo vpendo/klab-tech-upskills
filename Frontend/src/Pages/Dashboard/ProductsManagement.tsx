@@ -11,14 +11,17 @@ import {
   X,
   Image as ImageIcon,
 } from "lucide-react";
-import { products as initialProducts } from "../../data/product";
 import type { Product } from "../../Types/product";
+import {
+  getProducts,
+  addProduct as createProduct,
+  updateProduct as editProduct,
+  deleteProduct as removeProduct,
+} from "../../services/productService";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
-
-const STORAGE_KEY = "pendohub-products";
-const PRODUCTS_UPDATED_EVENT = "pendohub-products-updated";
+import axios from "axios";
 
 const productSchema = z.object({
   name: z
@@ -33,49 +36,39 @@ const productSchema = z.object({
   gender: z.enum(["Men", "Women"]),
   price: z.coerce.number().positive("Price must be greater than zero"),
   quantity: z.coerce.number().int().min(0, "Stock cannot be negative"),
-  imageUrl: z.string().trim().optional(),
 });
 
-// Input types represent the values entered into the form.
-// Output types represent the values after Zod validation.
 type ProductFormValues = z.input<typeof productSchema>;
 type ValidatedProductValues = z.output<typeof productSchema>;
 
-function getStoredProducts(): Product[] {
-  try {
-    const savedProducts = localStorage.getItem(STORAGE_KEY);
-
-    if (savedProducts !== null) {
-      const parsed: unknown = JSON.parse(savedProducts);
-
-      if (Array.isArray(parsed)) {
-        return parsed as Product[];
-      }
-    }
-  } catch {
-    console.error("Could not load saved PendoHub products.");
+function getErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      "The request failed. Please try again."
+    );
   }
 
-  return initialProducts;
-}
-
-function saveProducts(updatedProducts: Product[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProducts));
-    window.dispatchEvent(new Event(PRODUCTS_UPDATED_EVENT));
-  } catch {
-    console.error("Could not save PendoHub products.");
-    window.alert("Products could not be saved in this browser.");
-  }
+  return error instanceof Error
+    ? error.message
+    : "Something went wrong. Please try again.";
 }
 
 export default function ProductsManagement() {
-  const [products, setProducts] = useState<Product[]>(getStoredProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [stockFilter, setStockFilter] = useState("All");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageInputKey, setImageInputKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pageError, setPageError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const {
     register,
@@ -91,20 +84,26 @@ export default function ProductsManagement() {
       gender: "Women",
       price: 0,
       quantity: 0,
-      imageUrl: "",
     },
   });
 
+  // Load the actual products from the backend.
+  async function loadProducts() {
+    setLoading(true);
+    setPageError("");
+
+    try {
+      const response = await getProducts({ limit: 50 });
+      setProducts(response.products);
+    } catch (error) {
+      setPageError(getErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const syncProducts = () => setProducts(getStoredProducts());
-
-    window.addEventListener(PRODUCTS_UPDATED_EVENT, syncProducts);
-    window.addEventListener("storage", syncProducts);
-
-    return () => {
-      window.removeEventListener(PRODUCTS_UPDATED_EVENT, syncProducts);
-      window.removeEventListener("storage", syncProducts);
-    };
+    void loadProducts();
   }, []);
 
   const totalStock = products.reduce(
@@ -138,6 +137,9 @@ export default function ProductsManagement() {
 
   function openAddForm() {
     setEditingProduct(null);
+    setImageFile(null);
+    setFormError("");
+    setImageInputKey((key) => key + 1);
 
     reset({
       name: "",
@@ -146,7 +148,6 @@ export default function ProductsManagement() {
       gender: "Women",
       price: 0,
       quantity: 0,
-      imageUrl: "",
     });
 
     setShowForm(true);
@@ -154,6 +155,9 @@ export default function ProductsManagement() {
 
   function openEditForm(product: Product) {
     setEditingProduct(product);
+    setImageFile(null);
+    setFormError("");
+    setImageInputKey((key) => key + 1);
 
     reset({
       name: product.name,
@@ -162,7 +166,6 @@ export default function ProductsManagement() {
       gender: product.gender,
       price: product.price,
       quantity: product.quantity,
-      imageUrl: product.imageUrl || "",
     });
 
     setShowForm(true);
@@ -171,49 +174,80 @@ export default function ProductsManagement() {
   function closeForm() {
     setShowForm(false);
     setEditingProduct(null);
+    setImageFile(null);
+    setFormError("");
+    setImageInputKey((key) => key + 1);
     reset();
   }
 
-  const onSubmit: SubmitHandler<ValidatedProductValues> = (data) => {
-    const updatedProducts: Product[] = editingProduct
-      ? products.map((product) =>
-          product._id === editingProduct._id
-            ? {
-                ...product,
-                ...data,
-                imageUrl: data.imageUrl?.trim() || "",
-                imagePublicId: product.imagePublicId || "",
-              }
-            : product
-        )
-      : [
-          {
-            _id: crypto.randomUUID(),
-            ...data,
-            imageUrl: data.imageUrl?.trim() || "",
-            imagePublicId: "",
-          },
-          ...products,
-        ];
+  const onSubmit: SubmitHandler<ValidatedProductValues> = async (data) => {
+    setFormError("");
+    setPageError("");
+    setSuccessMessage("");
 
-    saveProducts(updatedProducts);
-    setProducts(updatedProducts);
-    closeForm();
+    // The backend requires an uploaded image when creating a product.
+    if (!editingProduct && !imageFile) {
+      setFormError("Please select a product image.");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("name", data.name);
+    formData.append("description", data.description);
+    formData.append("category", data.category);
+    formData.append("gender", data.gender);
+    formData.append("price", String(data.price));
+    formData.append("quantity", String(data.quantity));
+
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+
+    try {
+      if (editingProduct) {
+        await editProduct(editingProduct._id, formData);
+      } else {
+        await createProduct(formData);
+      }
+
+      closeForm();
+      await loadProducts();
+
+      setSuccessMessage(
+        editingProduct
+          ? "Product updated successfully."
+          : "Product added successfully."
+      );
+    } catch (error) {
+      setFormError(getErrorMessage(error));
+    }
   };
 
-  function deleteProduct(product: Product) {
+  async function handleDeleteProduct(product: Product) {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${product.name}"?`
     );
 
     if (!confirmed) return;
 
-    const updatedProducts = products.filter(
-      (item) => item._id !== product._id
-    );
+    setDeletingId(product._id);
+    setPageError("");
+    setSuccessMessage("");
 
-    saveProducts(updatedProducts);
-    setProducts(updatedProducts);
+    try {
+      await removeProduct(product._id);
+
+      setProducts((currentProducts) =>
+        currentProducts.filter((item) => item._id !== product._id)
+      );
+
+      setSuccessMessage("Product deleted successfully.");
+    } catch (error) {
+      setPageError(getErrorMessage(error));
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const inputClass =
@@ -248,6 +282,32 @@ export default function ProductsManagement() {
           </button>
         </div>
 
+        {/* Feedback messages */}
+        {pageError && (
+          <div
+            role="alert"
+            className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <p>{pageError}</p>
+            <button
+              type="button"
+              onClick={() => void loadProducts()}
+              className="font-semibold underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {successMessage && (
+          <div
+            role="status"
+            className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+          >
+            {successMessage}
+          </div>
+        )}
+
         {/* Summary cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -255,10 +315,9 @@ export default function ProductsManagement() {
               <div>
                 <p className="text-sm text-gray-500">Total Products</p>
                 <p className="mt-2 text-2xl font-bold text-gray-900">
-                  {products.length}
+                  {loading ? "..." : products.length}
                 </p>
               </div>
-
               <div className="rounded-lg bg-orange-100 p-3 text-orange-600">
                 <Package size={23} />
               </div>
@@ -270,10 +329,9 @@ export default function ProductsManagement() {
               <div>
                 <p className="text-sm text-gray-500">Total Stock</p>
                 <p className="mt-2 text-2xl font-bold text-gray-900">
-                  {totalStock}
+                  {loading ? "..." : totalStock}
                 </p>
               </div>
-
               <div className="rounded-lg bg-blue-100 p-3 text-blue-600">
                 <Boxes size={23} />
               </div>
@@ -285,10 +343,9 @@ export default function ProductsManagement() {
               <div>
                 <p className="text-sm text-gray-500">Low Stock Products</p>
                 <p className="mt-2 text-2xl font-bold text-gray-900">
-                  {lowStockCount}
+                  {loading ? "..." : lowStockCount}
                 </p>
               </div>
-
               <div className="rounded-lg bg-red-100 p-3 text-red-600">
                 <AlertTriangle size={23} />
               </div>
@@ -304,7 +361,6 @@ export default function ProductsManagement() {
                 size={18}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
-
               <input
                 type="search"
                 value={search}
@@ -343,20 +399,21 @@ export default function ProductsManagement() {
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
             <h2 className="font-semibold text-gray-900">All Products</h2>
-
             <span className="text-sm text-gray-500">
               {filteredProducts.length} results
             </span>
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <div className="px-6 py-16 text-center text-sm text-gray-500">
+              Loading products from the server...
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="px-6 py-16 text-center">
               <Package className="mx-auto text-gray-300" size={42} />
-
               <h3 className="mt-3 font-semibold text-gray-900">
                 No products found
               </h3>
-
               <p className="mt-1 text-sm text-gray-500">
                 Try another search or add a new product.
               </p>
@@ -401,7 +458,6 @@ export default function ProductsManagement() {
                             <p className="font-semibold text-gray-900">
                               {product.name}
                             </p>
-
                             <p className="mt-1 text-xs text-gray-400">
                               ID: {product._id}
                             </p>
@@ -412,11 +468,9 @@ export default function ProductsManagement() {
                       <td className="px-5 py-4 text-gray-600">
                         {product.category}
                       </td>
-
                       <td className="px-5 py-4 text-gray-600">
                         {product.gender}
                       </td>
-
                       <td className="whitespace-nowrap px-5 py-4 font-medium text-gray-900">
                         {product.price.toLocaleString()} RWF
                       </td>
@@ -453,12 +507,17 @@ export default function ProductsManagement() {
 
                           <button
                             type="button"
-                            onClick={() => deleteProduct(product)}
+                            onClick={() => void handleDeleteProduct(product)}
+                            disabled={deletingId === product._id}
                             aria-label={`Delete ${product.name}`}
                             title="Delete product"
-                            className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                            className="rounded-lg border border-gray-200 p-2 text-gray-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <Trash2 size={16} />
+                            {deletingId === product._id ? (
+                              <span className="text-xs">...</span>
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -476,9 +535,7 @@ export default function ProductsManagement() {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeForm();
-            }
+            if (event.target === event.currentTarget) closeForm();
           }}
         >
           <div
@@ -495,7 +552,6 @@ export default function ProductsManagement() {
                 >
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </h2>
-
                 <p className="mt-1 text-sm text-gray-500">
                   Enter the product details below.
                 </p>
@@ -516,8 +572,16 @@ export default function ProductsManagement() {
               className="space-y-5 p-6"
               noValidate
             >
+              {formError && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
+                  {formError}
+                </p>
+              )}
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Product name */}
                 <div className="sm:col-span-2">
                   <label
                     htmlFor="name"
@@ -525,14 +589,12 @@ export default function ProductsManagement() {
                   >
                     Product Name
                   </label>
-
                   <input
                     id="name"
                     {...register("name")}
                     className={inputClass}
                     placeholder="e.g. Classic White Sneakers"
                   />
-
                   {errors.name && (
                     <p className="mt-1 text-xs text-red-600">
                       {errors.name.message}
@@ -540,7 +602,6 @@ export default function ProductsManagement() {
                   )}
                 </div>
 
-                {/* Description */}
                 <div className="sm:col-span-2">
                   <label
                     htmlFor="description"
@@ -548,7 +609,6 @@ export default function ProductsManagement() {
                   >
                     Description
                   </label>
-
                   <textarea
                     id="description"
                     {...register("description")}
@@ -556,7 +616,6 @@ export default function ProductsManagement() {
                     className={inputClass}
                     placeholder="Describe the product..."
                   />
-
                   {errors.description && (
                     <p className="mt-1 text-xs text-red-600">
                       {errors.description.message}
@@ -564,7 +623,6 @@ export default function ProductsManagement() {
                   )}
                 </div>
 
-                {/* Category */}
                 <div>
                   <label
                     htmlFor="category"
@@ -572,7 +630,6 @@ export default function ProductsManagement() {
                   >
                     Category
                   </label>
-
                   <select
                     id="category"
                     {...register("category")}
@@ -581,7 +638,6 @@ export default function ProductsManagement() {
                     <option value="Clothes">Clothes</option>
                     <option value="Shoes">Shoes</option>
                   </select>
-
                   {errors.category && (
                     <p className="mt-1 text-xs text-red-600">
                       {errors.category.message}
@@ -589,7 +645,6 @@ export default function ProductsManagement() {
                   )}
                 </div>
 
-                {/* Gender */}
                 <div>
                   <label
                     htmlFor="gender"
@@ -597,7 +652,6 @@ export default function ProductsManagement() {
                   >
                     Gender
                   </label>
-
                   <select
                     id="gender"
                     {...register("gender")}
@@ -606,7 +660,6 @@ export default function ProductsManagement() {
                     <option value="Women">Women</option>
                     <option value="Men">Men</option>
                   </select>
-
                   {errors.gender && (
                     <p className="mt-1 text-xs text-red-600">
                       {errors.gender.message}
@@ -614,7 +667,6 @@ export default function ProductsManagement() {
                   )}
                 </div>
 
-                {/* Price */}
                 <div>
                   <label
                     htmlFor="price"
@@ -622,17 +674,15 @@ export default function ProductsManagement() {
                   >
                     Price (RWF)
                   </label>
-
                   <input
                     id="price"
                     type="number"
-                    min="1"
+                    min="0.01"
                     step="1"
                     {...register("price")}
                     className={inputClass}
                     placeholder="25000"
                   />
-
                   {errors.price && (
                     <p className="mt-1 text-xs text-red-600">
                       {errors.price.message}
@@ -640,7 +690,6 @@ export default function ProductsManagement() {
                   )}
                 </div>
 
-                {/* Quantity */}
                 <div>
                   <label
                     htmlFor="quantity"
@@ -648,7 +697,6 @@ export default function ProductsManagement() {
                   >
                     Available Stock
                   </label>
-
                   <input
                     id="quantity"
                     type="number"
@@ -658,7 +706,6 @@ export default function ProductsManagement() {
                     className={inputClass}
                     placeholder="10"
                   />
-
                   {errors.quantity && (
                     <p className="mt-1 text-xs text-red-600">
                       {errors.quantity.message}
@@ -666,32 +713,50 @@ export default function ProductsManagement() {
                   )}
                 </div>
 
-                {/* Image URL */}
+                {/* Upload a file instead of entering an image URL */}
                 <div className="sm:col-span-2">
                   <label
-                    htmlFor="imageUrl"
+                    htmlFor="imageFile"
                     className="mb-1.5 block text-sm font-medium text-gray-700"
                   >
-                    Product Image URL (optional)
+                    Product Image {editingProduct ? "(optional)" : ""}
                   </label>
-
                   <input
-                    id="imageUrl"
-                    type="url"
-                    {...register("imageUrl")}
+                    key={imageInputKey}
+                    id="imageFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      setImageFile(event.target.files?.[0] ?? null);
+                      setFormError("");
+                    }}
                     className={inputClass}
-                    placeholder="https://example.com/product.jpg"
                   />
-
-                  {errors.imageUrl && (
-                    <p className="mt-1 text-xs text-red-600">
-                      {errors.imageUrl.message}
+                  <p className="mt-1 text-xs text-gray-500">
+                    {editingProduct
+                      ? "Choose a new image only if you want to replace the current one."
+                      : "Select an image file for this product."}
+                  </p>
+                  {editingProduct?.imageUrl && !imageFile && (
+                    <div className="mt-3 flex items-center gap-3">
+                      <img
+                        src={editingProduct.imageUrl}
+                        alt={editingProduct.name}
+                        className="h-14 w-14 rounded-lg border object-cover"
+                      />
+                      <span className="text-sm text-gray-500">
+                        Current image
+                      </span>
+                    </div>
+                  )}
+                  {imageFile && (
+                    <p className="mt-2 text-sm text-green-700">
+                      Selected: {imageFile.name}
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Form actions */}
               <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
@@ -707,7 +772,11 @@ export default function ProductsManagement() {
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Plus size={17} />
-                  {editingProduct ? "Save Changes" : "Add Product"}
+                  {isSubmitting
+                    ? "Saving..."
+                    : editingProduct
+                      ? "Save Changes"
+                      : "Add Product"}
                 </button>
               </div>
             </form>

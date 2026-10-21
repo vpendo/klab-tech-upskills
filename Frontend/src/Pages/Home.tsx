@@ -1,11 +1,43 @@
 
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+
 import Background from "../assets/image/background.jpg";
-import { products } from "../data/product";
 import ProductCard from "../Components/ProductCart";
+import { getProducts } from "../services/productService";
+import type { Product } from "../Types/product";
 
 const Home = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProducts = async () => {
+      try {
+        const response = await getProducts({ page: 1, limit: 50 });
+
+        if (isMounted) {
+          setProducts(response.products);
+        }
+      } catch (error) {
+        console.error("Failed to load home page products:", error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const newArrivals = [...products].reverse().slice(0, 4);
 
   const categories = [
@@ -126,7 +158,11 @@ const Home = () => {
             </Link>
           </div>
 
-          {newArrivals.length > 0 ? (
+          {loading ? (
+            <p className="py-10 text-center text-gray-500">
+              Loading new arrivals...
+            </p>
+          ) : newArrivals.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {newArrivals.map((product) => (
                 <ProductCard key={product._id} product={product} />
