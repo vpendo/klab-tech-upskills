@@ -1,5 +1,5 @@
-
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   X,
   Image as ImageIcon,
+  ArrowLeft,
 } from "lucide-react";
 import type { Product } from "../../Types/product";
 import {
@@ -56,6 +57,8 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function ProductsManagement() {
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -87,7 +90,6 @@ export default function ProductsManagement() {
     },
   });
 
-  // Load the actual products from the backend.
   async function loadProducts() {
     setLoading(true);
     setPageError("");
@@ -185,9 +187,21 @@ export default function ProductsManagement() {
     setPageError("");
     setSuccessMessage("");
 
-    // The backend requires an uploaded image when creating a product.
     if (!editingProduct && !imageFile) {
       setFormError("Please select a product image.");
+      return;
+    }
+
+    if (
+      imageFile &&
+      !["image/jpeg", "image/png", "image/webp"].includes(imageFile.type)
+    ) {
+      setFormError("Please select a JPEG, PNG, or WebP image.");
+      return;
+    }
+
+    if (imageFile && imageFile.size > 5 * 1024 * 1024) {
+      setFormError("The image must be 5 MB or smaller.");
       return;
     }
 
@@ -204,6 +218,8 @@ export default function ProductsManagement() {
       formData.append("image", imageFile);
     }
 
+    const wasEditing = Boolean(editingProduct);
+
     try {
       if (editingProduct) {
         await editProduct(editingProduct._id, formData);
@@ -215,7 +231,7 @@ export default function ProductsManagement() {
       await loadProducts();
 
       setSuccessMessage(
-        editingProduct
+        wasEditing
           ? "Product updated successfully."
           : "Product added successfully."
       );
@@ -256,9 +272,18 @@ export default function ProductsManagement() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Page heading */}
+        {/* Page heading and dashboard navigation */}
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/admin")}
+              className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600"
+            >
+              <ArrowLeft size={18} />
+              Back to Dashboard
+            </button>
+
             <p className="text-sm font-medium text-orange-600">
               PendoHub Admin
             </p>
@@ -713,7 +738,6 @@ export default function ProductsManagement() {
                   )}
                 </div>
 
-                {/* Upload a file instead of entering an image URL */}
                 <div className="sm:col-span-2">
                   <label
                     htmlFor="imageFile"
@@ -725,7 +749,7 @@ export default function ProductsManagement() {
                     key={imageInputKey}
                     id="imageFile"
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={(event) => {
                       setImageFile(event.target.files?.[0] ?? null);
                       setFormError("");
@@ -735,8 +759,9 @@ export default function ProductsManagement() {
                   <p className="mt-1 text-xs text-gray-500">
                     {editingProduct
                       ? "Choose a new image only if you want to replace the current one."
-                      : "Select an image file for this product."}
+                      : "Select a JPEG, PNG, or WebP image up to 5 MB."}
                   </p>
+
                   {editingProduct?.imageUrl && !imageFile && (
                     <div className="mt-3 flex items-center gap-3">
                       <img
@@ -749,6 +774,7 @@ export default function ProductsManagement() {
                       </span>
                     </div>
                   )}
+
                   {imageFile && (
                     <p className="mt-2 text-sm text-green-700">
                       Selected: {imageFile.name}
