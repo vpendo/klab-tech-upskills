@@ -1,22 +1,23 @@
-
 import { Routes, Route, useLocation, Link } from "react-router-dom";
 
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/footer";
 
+// Public pages
 import Home from "./Pages/Home";
 import Shop from "./Pages/Shop";
 import About from "./Pages/About";
 import Contact from "./Pages/Contact";
 import Login from "./Pages/login";
 import Register from "./Pages/Register";
+import ForgotPassword from "./Pages/ForgotPassword";
+import ResetPassword from "./Pages/ResetPassword";
 
+// Shopping pages
 import Cart from "./Pages/Cart";
 import Checkout from "./Pages/Checkout";
 import ProductDetails from "./Pages/ProductDetails";
 import Wishlist from "./Pages/Wishlist";
-import ForgotPassword from "./Pages/ForgotPassword";
-import ResetPassword from "./Pages/ResetPassword";
 
 // Admin pages
 import AdminDashboard from "./Pages/Dashboard/AdminDashboard";
@@ -53,7 +54,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Shopping pages */}
+        {/* General shopping pages */}
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product/:id" element={<ProductDetails />} />
@@ -81,6 +82,14 @@ const App = () => {
         <Route
           path="/account"
           element={<CustomerDashboard />}
+        />
+        <Route
+          path="/account/cart"
+          element={<Cart />}
+        />
+        <Route
+          path="/account/wishlist"
+          element={<Wishlist />}
         />
         <Route
           path="/account/orders"

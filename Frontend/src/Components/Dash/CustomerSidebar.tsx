@@ -1,8 +1,8 @@
-
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   ShoppingBag,
+  ShoppingCart,
   Heart,
   UserRound,
   Settings,
@@ -27,6 +27,7 @@ export default function CustomerSidebar({
       name: "Dashboard",
       path: "/account",
       icon: LayoutDashboard,
+      end: true,
     },
     {
       name: "My Orders",
@@ -34,8 +35,13 @@ export default function CustomerSidebar({
       icon: ShoppingBag,
     },
     {
+      name: "My Cart",
+      path: "/account/cart",
+      icon: ShoppingCart,
+    },
+    {
       name: "My Wishlist",
-      path: "/wishlist",
+      path: "/account/wishlist",
       icon: Heart,
     },
     {
@@ -55,7 +61,7 @@ export default function CustomerSidebar({
       {isOpen && (
         <button
           type="button"
-          aria-label="Close navigation"
+          aria-label="Close navigation overlay"
           onClick={onClose}
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
         />
@@ -88,7 +94,7 @@ export default function CustomerSidebar({
           </button>
         </div>
 
-        {/* Customer information */}
+        {/* Account heading */}
         <div className="border-b border-gray-100 px-5 py-6">
           <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
             My Account
@@ -106,11 +112,11 @@ export default function CustomerSidebar({
           aria-label="Customer menu"
           className="flex-1 space-y-2 overflow-y-auto px-3 py-5"
         >
-          {links.map(({ name, path, icon: Icon }) => (
+          {links.map(({ name, path, icon: Icon, end }) => (
             <NavLink
               key={name}
               to={path}
-              end={path === "/account"}
+              end={end}
               onClick={onClose}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
@@ -122,10 +128,7 @@ export default function CustomerSidebar({
             >
               {({ isActive }) => (
                 <>
-                  <Icon
-                    size={20}
-                    strokeWidth={isActive ? 2.4 : 2}
-                  />
+                  <Icon size={20} strokeWidth={isActive ? 2.4 : 2} />
                   <span>{name}</span>
                 </>
               )}

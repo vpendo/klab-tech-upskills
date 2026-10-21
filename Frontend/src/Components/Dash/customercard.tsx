@@ -1,6 +1,6 @@
-
 import {
   ShoppingBag,
+  ShoppingCart,
   Clock3,
   PackageCheck,
   Heart,
@@ -23,6 +23,7 @@ interface DashboardCardsProps {
   pendingOrders?: number;
   deliveredOrders?: number;
   wishlistItems?: number;
+  cartItems?: number;
 }
 
 export function DashboardCard({
@@ -58,14 +59,14 @@ export function DashboardCard({
   );
 
   const cardClassName =
-    "block rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:p-6";
+    "block rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-md sm:p-6";
 
   if (to) {
     return (
       <Link
         to={to}
-        className={`${cardClassName} hover:border-rose-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2`}
-        aria-label={`${title}: ${value}. ${description}. View wishlist`}
+        className={`${cardClassName} focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2`}
+        aria-label={`${title}: ${value}. ${description}`}
       >
         {cardContent}
       </Link>
@@ -80,6 +81,7 @@ export default function DashboardCards({
   pendingOrders = 0,
   deliveredOrders = 0,
   wishlistItems = 0,
+  cartItems = 0,
 }: DashboardCardsProps) {
   const cards: (DashboardCardProps & { key: string })[] = [
     {
@@ -87,8 +89,9 @@ export default function DashboardCards({
       title: "My Orders",
       value: totalOrders,
       icon: ShoppingBag,
-      description: "All your orders",
+      description: "View your purchases",
       iconColor: "bg-orange-50 text-orange-500",
+      to: "/account/orders",
     },
     {
       key: "pending",
@@ -97,6 +100,7 @@ export default function DashboardCards({
       icon: Clock3,
       description: "Orders awaiting completion",
       iconColor: "bg-amber-50 text-amber-600",
+      to: "/account/orders",
     },
     {
       key: "delivered",
@@ -105,6 +109,16 @@ export default function DashboardCards({
       icon: PackageCheck,
       description: "Successfully delivered",
       iconColor: "bg-green-50 text-green-600",
+      to: "/account/orders",
+    },
+    {
+      key: "cart",
+      title: "My Cart",
+      value: cartItems,
+      icon: ShoppingCart,
+      description: "Review your shopping bag",
+      iconColor: "bg-blue-50 text-blue-600",
+      to: "/account/cart",
     },
     {
       key: "wishlist",
@@ -113,12 +127,12 @@ export default function DashboardCards({
       icon: Heart,
       description: "View your saved products",
       iconColor: "bg-rose-50 text-rose-500",
-      to: "/wishlist",
+      to: "/account/wishlist",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {cards.map(({ key, ...card }) => (
         <DashboardCard key={key} {...card} />
       ))}
