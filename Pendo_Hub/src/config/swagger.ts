@@ -1,3 +1,4 @@
+
 import swaggerJsdoc from "swagger-jsdoc";
 
 const options: swaggerJsdoc.Options = {
@@ -26,6 +27,14 @@ const options: swaggerJsdoc.Options = {
       {
         name: "Products",
         description: "Product management and product statistics",
+      },
+      {
+        name: "Cart",
+        description: "Customer shopping cart management",
+      },
+      {
+        name: "Wishlist",
+        description: "Customer wishlist management",
       },
     ],
 

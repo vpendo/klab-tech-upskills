@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -25,13 +26,14 @@ interface CustomerUser {
 export default function CustomerDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [customerName, setCustomerName] = useState("Customer");
-  const { wishlistCount } = useWishlist();
+
+  const { wishlistCount, refreshWishlist } = useWishlist();
   const navigate = useNavigate();
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
 
-    if (!savedUser) {
+    if (!savedUser || !localStorage.getItem("token")) {
       navigate("/login", { replace: true });
       return;
     }
@@ -48,12 +50,15 @@ export default function CustomerDashboard() {
       }
 
       setCustomerName(user.name?.trim() || "Customer");
+
+      // Load the customer's wishlist from the backend.
+      void refreshWishlist();
     } catch {
       localStorage.removeItem("user");
       localStorage.removeItem("token");
       navigate("/login", { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, refreshWishlist]);
 
   // Sample orders until real customer order data is available.
   const recentOrders = [
@@ -202,8 +207,8 @@ export default function CustomerDashboard() {
             />
 
             <p className="mt-2 text-xs text-gray-400">
-              Order figures currently use sample data. Wishlist count comes
-              from your saved products.
+              Order figures currently use sample data. Wishlist count is
+              loaded from your saved products.
             </p>
           </section>
 
@@ -323,12 +328,14 @@ export default function CustomerDashboard() {
 
               <Link
                 to="/wishlist"
-                className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
+                className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-pink-200 hover:shadow-md"
               >
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-pink-100 text-pink-600">
                   <Heart size={23} />
                 </div>
-                <h3 className="font-bold text-gray-900">My Wishlist</h3>
+                <h3 className="font-bold text-gray-900">
+                  My Wishlist ({wishlistCount})
+                </h3>
                 <p className="mt-2 text-sm leading-5 text-gray-500">
                   Find the clothes and shoes you have saved.
                 </p>

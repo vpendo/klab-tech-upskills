@@ -1,11 +1,14 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
   type ReactNode,
 } from "react";
+import axios from "axios";
 import type { Product } from "../Types/product";
+import api from "../services/api";
 
 export interface CartItem {
   product: Product;
@@ -14,194 +17,157 @@ export interface CartItem {
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (product: Product, quantity?: number) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   cartCount: number;
   subtotal: number;
+  cartLoading: boolean;
+  cartError: string;
+  refreshCart: () => Promise<void>;
+}
+
+interface CartResponse {
+  items?: CartItem[];
+  totalItems?: number;
+  totalPrice?: number;
+  message?: string;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = "pendohub-cart";
-
-// Check whether a value is a valid object.
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-// Validate cart items restored from localStorage.
-function isValidCartItem(item: unknown): item is CartItem {
-  if (!isRecord(item) || !isRecord(item.product)) {
-    return false;
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.message ||
+      "Unable to update your cart. Please try again."
+    );
   }
 
-  const product = item.product;
-  const quantity = item.quantity;
-
-  return (
-    typeof product._id === "string" &&
-    product._id.trim().length > 0 &&
-    typeof product.name === "string" &&
-    typeof product.price === "number" &&
-    Number.isFinite(product.price) &&
-    product.price >= 0 &&
-    typeof product.quantity === "number" &&
-    Number.isInteger(product.quantity) &&
-    product.quantity >= 1 &&
-    typeof quantity === "number" &&
-    Number.isInteger(quantity) &&
-    quantity >= 1 &&
-    quantity <= product.quantity
-  );
-}
-
-// Restore the cart from browser storage.
-function loadCart(): CartItem[] {
-  try {
-    if (typeof window === "undefined") {
-      return [];
-    }
-
-    const savedCart = window.localStorage.getItem(CART_STORAGE_KEY);
-
-    if (!savedCart) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(savedCart);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    const validItems = parsed.filter(isValidCartItem);
-
-    // Avoid duplicate products in the cart.
-    const uniqueItems = new Map<string, CartItem>();
-
-    for (const item of validItems) {
-      if (!uniqueItems.has(item.product._id)) {
-        uniqueItems.set(item.product._id, item);
-      }
-    }
-
-    return Array.from(uniqueItems.values());
-  } catch {
-    return [];
-  }
-}
+  return "Unable to update your cart. Please try again.";
+};
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>(loadCart);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cartLoading, setCartLoading] = useState(true);
+  const [cartError, setCartError] = useState("");
 
-  // Save cart changes automatically.
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(
-          CART_STORAGE_KEY,
-          JSON.stringify(cartItems)
-        );
-      }
-    } catch {
-      // The cart remains usable in React state if storage fails.
-    }
-  }, [cartItems]);
-
-  // Add a product or increase its quantity.
-  const addToCart = (product: Product) => {
-    if (
-      !product._id ||
-      !product.name?.trim() ||
-      !Number.isFinite(product.price) ||
-      product.price < 0 ||
-      !Number.isInteger(product.quantity) ||
-      product.quantity < 1
-    ) {
+  // Load the logged-in customer's cart from the backend.
+  const refreshCart = useCallback(async () => {
+    if (!localStorage.getItem("token")) {
+      setCartItems([]);
+      setCartLoading(false);
+      setCartError("");
       return;
     }
 
-    setCartItems((items) => {
-      const existingItem = items.find(
-        (item) => item.product._id === product._id
+    setCartLoading(true);
+    setCartError("");
+
+    try {
+      const response = await api.get<CartResponse>("/api/cart");
+      setCartItems(response.data.items ?? []);
+    } catch (error) {
+      setCartError(getErrorMessage(error));
+      console.error("Load cart error:", error);
+    } finally {
+      setCartLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshCart();
+  }, [refreshCart]);
+
+  // Add a product to the backend cart.
+  const addToCart = async (product: Product, quantity = 1) => {
+    if (!localStorage.getItem("token")) {
+      setCartError("Please log in to add products to your cart.");
+      return;
+    }
+
+    if (!product._id || !Number.isInteger(quantity) || quantity < 1) {
+      setCartError("Please select a valid product quantity.");
+      return;
+    }
+
+    setCartError("");
+
+    try {
+      await api.post("/api/cart/items", {
+        productId: product._id,
+        quantity,
+      });
+
+      await refreshCart();
+    } catch (error) {
+      setCartError(getErrorMessage(error));
+      console.error("Add cart item error:", error);
+    }
+  };
+
+  // Remove a product from the backend cart.
+  const removeFromCart = async (productId: string) => {
+    setCartError("");
+
+    try {
+      await api.delete(
+        `/api/cart/items/${encodeURIComponent(productId)}`
       );
 
-      if (existingItem) {
-        // Do not exceed the available stock.
-        if (existingItem.quantity >= product.quantity) {
-          return items;
-        }
-
-        return items.map((item) =>
-          item.product._id === product._id
-            ? {
-                ...item,
-                product,
-                quantity: Math.min(
-                  item.quantity + 1,
-                  product.quantity
-                ),
-              }
-            : item
-        );
-      }
-
-      return [...items, { product, quantity: 1 }];
-    });
+      setCartItems((items) =>
+        items.filter((item) => item.product._id !== productId)
+      );
+    } catch (error) {
+      setCartError(getErrorMessage(error));
+      console.error("Remove cart item error:", error);
+    }
   };
 
-  // Remove a product from the cart.
-  const removeFromCart = (productId: string) => {
-    setCartItems((items) =>
-      items.filter((item) => item.product._id !== productId)
-    );
-  };
-
-  // Update a product's quantity without exceeding stock.
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (!Number.isInteger(quantity)) {
+  // Update the quantity of a product in the backend cart.
+  const updateQuantity = async (productId: string, quantity: number) => {
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      setCartError("Quantity must be at least 1.");
       return;
     }
 
-    setCartItems((items) =>
-      items.flatMap((item) => {
-        if (item.product._id !== productId) {
-          return [item];
-        }
+    setCartError("");
 
-        const stock = item.product.quantity;
+    try {
+      await api.patch(
+        `/api/cart/items/${encodeURIComponent(productId)}`,
+        { quantity }
+      );
 
-        if (!Number.isInteger(stock) || stock < 1) {
-          return [];
-        }
-
-        return [
-          {
-            ...item,
-            quantity: Math.max(1, Math.min(quantity, stock)),
-          },
-        ];
-      })
-    );
+      await refreshCart();
+    } catch (error) {
+      setCartError(getErrorMessage(error));
+      console.error("Update cart quantity error:", error);
+    }
   };
 
-  // Empty the entire cart.
-  const clearCart = () => {
-    setCartItems([]);
+  // Clear the backend cart.
+  const clearCart = async () => {
+    setCartError("");
+
+    try {
+      await api.delete("/api/cart");
+      setCartItems([]);
+    } catch (error) {
+      setCartError(getErrorMessage(error));
+      console.error("Clear cart error:", error);
+      await refreshCart();
+    }
   };
 
-  // Total number of individual items.
   const cartCount = cartItems.reduce(
     (total, item) => total + item.quantity,
     0
   );
 
-  // Total price before shipping or other charges.
   const subtotal = cartItems.reduce(
-    (total, item) =>
-      total + item.product.price * item.quantity,
+    (total, item) => total + item.product.price * item.quantity,
     0
   );
 
@@ -215,6 +181,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         cartCount,
         subtotal,
+        cartLoading,
+        cartError,
+        refreshCart,
       }}
     >
       {children}
@@ -222,7 +191,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Access the cart from any component inside CartProvider.
 export function useCart(): CartContextType {
   const context = useContext(CartContext);
 

@@ -6,6 +6,9 @@ import swaggerUi from "swagger-ui-express";
 
 import productRouter from "./router/product.router";
 import authRouter from "./router/auth.router";
+import CartRoute from "./router/cart.router";
+import WishlistRoute from "./router/wishlist.router";
+
 import { connectDB } from "./config/db";
 import swaggerSpec from "./config/swagger";
 
@@ -38,6 +41,12 @@ app.use("/api/auth", authRouter);
 
 // Product routes
 app.use("/api", productRouter);
+
+// Customer cart routes
+app.use("/api", CartRoute);
+
+// Customer wishlist routes
+app.use("/api", WishlistRoute);
 
 // Swagger documentation
 app.use(

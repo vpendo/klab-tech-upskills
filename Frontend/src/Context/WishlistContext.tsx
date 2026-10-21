@@ -1,86 +1,161 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
   type ReactNode,
 } from "react";
+import axios from "axios";
 import type { Product } from "../Types/product";
+import api from "../services/api";
 
 interface WishlistContextType {
   wishlistItems: Product[];
-  addToWishlist: (product: Product) => void;
-  removeFromWishlist: (productId: string) => void;
-  toggleWishlist: (product: Product) => void;
+  addToWishlist: (product: Product) => Promise<void>;
+  removeFromWishlist: (productId: string) => Promise<void>;
+  toggleWishlist: (product: Product) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
-  clearWishlist: () => void;
+  clearWishlist: () => Promise<void>;
   wishlistCount: number;
+  wishlistLoading: boolean;
+  wishlistError: string;
+  refreshWishlist: () => Promise<void>;
 }
 
-const WishlistContext = createContext<WishlistContextType | undefined>(
-  undefined
-);
+interface WishlistResponse {
+  products?: Product[];
+  message?: string;
+}
 
-const STORAGE_KEY = "pendohub-wishlist";
+const WishlistContext = createContext<
+  WishlistContextType | undefined
+>(undefined);
 
 interface WishlistProviderProps {
   children: ReactNode;
 }
 
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return (
+      error.response?.data?.message ||
+      "Unable to update your wishlist. Please try again."
+    );
+  }
+
+  return "Unable to update your wishlist. Please try again.";
+};
+
 export const WishlistProvider = ({
   children,
 }: WishlistProviderProps) => {
-  const [wishlistItems, setWishlistItems] = useState<Product[]>(() => {
-    try {
-      const savedWishlist = localStorage.getItem(STORAGE_KEY);
+  const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
+  const [wishlistError, setWishlistError] = useState("");
 
-      return savedWishlist ? (JSON.parse(savedWishlist) as Product[]) : [];
-    } catch {
-      return [];
+  // Load the logged-in customer's wishlist from MongoDB through the API.
+  const refreshWishlist = useCallback(async () => {
+    if (!localStorage.getItem("token")) {
+      setWishlistItems([]);
+      setWishlistLoading(false);
+      setWishlistError("");
+      return;
     }
-  });
+
+    setWishlistLoading(true);
+    setWishlistError("");
+
+    try {
+      const response = await api.get<WishlistResponse>("/api/wishlist");
+      setWishlistItems(response.data.products ?? []);
+    } catch (error) {
+      setWishlistError(getErrorMessage(error));
+      console.error("Load wishlist error:", error);
+    } finally {
+      setWishlistLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(wishlistItems));
-  }, [wishlistItems]);
+    void refreshWishlist();
+  }, [refreshWishlist]);
 
-  const addToWishlist = (product: Product) => {
-    setWishlistItems((currentItems) => {
-      const alreadyExists = currentItems.some(
-        (item) => item._id === product._id
-      );
+  // Add a product to the customer's MongoDB wishlist.
+  const addToWishlist = async (product: Product) => {
+    if (!localStorage.getItem("token")) {
+      setWishlistError("Please log in to save products to your wishlist.");
+      return;
+    }
 
-      if (alreadyExists) return currentItems;
+    setWishlistError("");
 
-      return [...currentItems, product];
-    });
+    try {
+      await api.post("/api/wishlist/items", {
+        productId: product._id,
+      });
+
+      await refreshWishlist();
+    } catch (error) {
+      setWishlistError(getErrorMessage(error));
+      console.error("Add wishlist item error:", error);
+    }
   };
 
-  const removeFromWishlist = (productId: string) => {
-    setWishlistItems((currentItems) =>
-      currentItems.filter((item) => item._id !== productId)
+  // Remove a product from the customer's MongoDB wishlist.
+  const removeFromWishlist = async (productId: string) => {
+    setWishlistError("");
+
+    try {
+      await api.delete(
+        `/api/wishlist/items/${encodeURIComponent(productId)}`
+      );
+
+      setWishlistItems((currentItems) =>
+        currentItems.filter((item) => item._id !== productId)
+      );
+    } catch (error) {
+      setWishlistError(getErrorMessage(error));
+      console.error("Remove wishlist item error:", error);
+    }
+  };
+
+  // Toggle a product's wishlist status.
+  const toggleWishlist = async (product: Product) => {
+    const alreadyExists = wishlistItems.some(
+      (item) => item._id === product._id
     );
+
+    if (alreadyExists) {
+      await removeFromWishlist(product._id);
+    } else {
+      await addToWishlist(product);
+    }
   };
 
-  const toggleWishlist = (product: Product) => {
-    setWishlistItems((currentItems) => {
-      const alreadyExists = currentItems.some(
-        (item) => item._id === product._id
-      );
-
-      if (alreadyExists) {
-        return currentItems.filter((item) => item._id !== product._id);
-      }
-
-      return [...currentItems, product];
-    });
-  };
-
+  // Check whether a product is saved.
   const isInWishlist = (productId: string) =>
     wishlistItems.some((item) => item._id === productId);
 
-  const clearWishlist = () => {
-    setWishlistItems([]);
+  // Clear the wishlist using the existing backend delete endpoint.
+  const clearWishlist = async () => {
+    setWishlistError("");
+
+    const currentItems = [...wishlistItems];
+
+    try {
+      for (const product of currentItems) {
+        await api.delete(
+          `/api/wishlist/items/${encodeURIComponent(product._id)}`
+        );
+      }
+
+      setWishlistItems([]);
+    } catch (error) {
+      setWishlistError(getErrorMessage(error));
+      console.error("Clear wishlist error:", error);
+      await refreshWishlist();
+    }
   };
 
   const wishlistCount = wishlistItems.length;
@@ -95,6 +170,9 @@ export const WishlistProvider = ({
         isInWishlist,
         clearWishlist,
         wishlistCount,
+        wishlistLoading,
+        wishlistError,
+        refreshWishlist,
       }}
     >
       {children}
