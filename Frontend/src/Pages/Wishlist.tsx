@@ -1,12 +1,12 @@
+
 import { useCallback, useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   Heart,
   ShoppingCart,
   Trash2,
   ArrowRight,
-  ArrowLeft,
   LoaderCircle,
 } from "lucide-react";
 import api from "../services/api";
@@ -48,10 +48,9 @@ const getErrorMessage = (error: unknown): string => {
 
 const Wishlist = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Identify when the wishlist is opened from the customer dashboard.
-  const isCustomerPage = location.pathname.startsWith("/account/");
+  const isCustomerPage =
+    window.location.pathname.startsWith("/account/");
 
   const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +58,6 @@ const Wishlist = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Load the logged-in customer's wishlist.
   const fetchWishlist = useCallback(async () => {
     setError("");
 
@@ -93,7 +91,9 @@ const Wishlist = () => {
           return;
         }
 
-        setError("You are not authorized to access the customer wishlist.");
+        setError(
+          "You are not authorized to access the customer wishlist."
+        );
         return;
       }
 
@@ -132,7 +132,6 @@ const Wishlist = () => {
     void fetchWishlist();
   }, [fetchWishlist, navigate]);
 
-  // Remove one product from the wishlist.
   const removeFromWishlist = async (productId: string) => {
     setActionLoading(productId);
     setError("");
@@ -155,7 +154,6 @@ const Wishlist = () => {
     }
   };
 
-  // Clear the wishlist by removing each saved product.
   const clearWishlist = async () => {
     if (wishlistItems.length === 0) return;
 
@@ -183,7 +181,6 @@ const Wishlist = () => {
     }
   };
 
-  // Add a saved product to the backend cart.
   const addToCart = async (product: Product) => {
     if (product.quantity <= 0) return;
 
@@ -225,32 +222,22 @@ const Wishlist = () => {
     <section className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         {/* Navigation */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-6 flex justify-end">
           {isCustomerPage ? (
-            <Link
-              to="/account"
-              className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-white px-4 py-2.5 text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
-            >
-              <ArrowLeft size={18} />
-              Back to Dashboard
-            </Link>
-          ) : (
-            <Link
-              to="/shop"
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
-            >
-              <ArrowLeft size={18} />
-              Continue Shopping
-            </Link>
-          )}
-
-          {isCustomerPage && (
             <Link
               to="/account/cart"
               className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
             >
               <ShoppingCart size={18} />
               My Cart
+            </Link>
+          ) : (
+            <Link
+              to="/shop"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+            >
+              Continue Shopping
+              <ArrowRight size={18} />
             </Link>
           )}
         </div>
@@ -319,10 +306,10 @@ const Wishlist = () => {
             </p>
 
             <Link
-              to={isCustomerPage ? "/account" : "/shop"}
+              to="/shop"
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700"
             >
-              {isCustomerPage ? "Back to Dashboard" : "Continue Shopping"}
+              Continue Shopping
               <ArrowRight size={18} />
             </Link>
           </div>

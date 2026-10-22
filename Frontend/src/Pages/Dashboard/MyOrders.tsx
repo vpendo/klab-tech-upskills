@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -8,7 +9,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import CustomerSidebar from "../../Components/Dash/CustomerSidebar";
 import api from "../../services/api";
 
 type OrderStatus =
@@ -88,7 +88,6 @@ const getStatusStyle = (status: OrderStatus) => {
 };
 
 export default function MyOrders() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [orders, setOrders] = useState<OrderRow[]>([]);
@@ -115,9 +114,12 @@ export default function MyOrders() {
               ? data.data.orders
               : [];
 
-      if (!Array.isArray(data) && !Array.isArray(data?.orders) &&
-          !Array.isArray(data?.data) &&
-          !Array.isArray(data?.data?.orders)) {
+      if (
+        !Array.isArray(data) &&
+        !Array.isArray(data?.orders) &&
+        !Array.isArray(data?.data) &&
+        !Array.isArray(data?.data?.orders)
+      ) {
         console.error("Unexpected orders response:", data);
       }
 
@@ -143,13 +145,34 @@ export default function MyOrders() {
       setOrders(customerOrders);
     } catch (err) {
       console.error("Failed to load customer orders:", err);
+
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err
+      ) {
+        const response = (
+          err as { response?: { status?: number } }
+        ).response;
+
+        if (response?.status === 401) {
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        if (response?.status === 403) {
+          navigate("/dashboard/admin", { replace: true });
+          return;
+        }
+      }
+
       setError(
         "Unable to load your orders. Please check your connection and try again."
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -200,222 +223,216 @@ export default function MyOrders() {
     (order) => order.status === "Delivered"
   ).length;
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login", { replace: true });
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 lg:flex">
-      <CustomerSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onLogout={handleLogout}
-      />
+    <div className="min-w-0 bg-gray-50">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* Page heading */}
+        <header className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm text-gray-500">My Account</p>
 
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <header className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              My Orders
+            </h1>
+
+            <p className="mt-1 text-sm text-gray-500">
+              View your purchases and track their progress.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void loadOrders()}
+            disabled={loading}
+            className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-60 sm:px-4 sm:py-3"
+          >
+            <RefreshCw
+              size={17}
+              className={loading ? "animate-spin" : ""}
+            />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+        </header>
+
+        {/* Order statistics */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">Total Orders</p>
+              <ShoppingBag className="text-orange-500" size={22} />
+            </div>
+
+            <p className="mt-3 text-3xl font-bold text-gray-900">
+              {loading ? "..." : orders.length}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">In Progress</p>
+              <Truck className="text-blue-500" size={22} />
+            </div>
+
+            <p className="mt-3 text-3xl font-bold text-gray-900">
+              {loading ? "..." : inProgressCount}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">Delivered</p>
+              <Package className="text-green-500" size={22} />
+            </div>
+
+            <p className="mt-3 text-3xl font-bold text-gray-900">
+              {loading ? "..." : deliveredCount}
+            </p>
+          </div>
+        </section>
+
+        {/* Search and filter */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Search
+                size={19}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search by order ID or product..."
+                className="w-full rounded-lg border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+              />
+            </div>
+
+            <select
+              value={selectedStatus}
+              onChange={(event) => setSelectedStatus(event.target.value)}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-orange-500"
+              aria-label="Filter orders by status"
+            >
+              <option value="All">All statuses</option>
+
+              {validStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
+
+        {/* Order history */}
+        <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="border-b border-gray-100 p-5 sm:p-6">
+            <h2 className="text-lg font-bold text-gray-900">
+              Order History
+            </h2>
+
+            <p className="mt-1 text-sm text-gray-500">
+              {loading
+                ? "Loading your orders..."
+                : `${filteredOrders.length} ${
+                    filteredOrders.length === 1 ? "order" : "orders"
+                  } found`}
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="px-6 py-14 text-center text-sm text-gray-500">
+              Loading your orders...
+            </div>
+          ) : error ? (
+            <div className="px-6 py-14 text-center">
+              <p className="text-sm text-red-600">{error}</p>
+
               <button
                 type="button"
-                onClick={() => setSidebarOpen(true)}
-                className="rounded-lg border border-gray-200 bg-white p-2 text-gray-700 lg:hidden"
-                aria-label="Open dashboard menu"
+                onClick={() => void loadOrders()}
+                className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
               >
-                <Package size={21} />
+                Try Again
               </button>
-
-              <div>
-                <p className="text-sm text-gray-500">My Account</p>
-                <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-                  My Orders
-                </h1>
-                <p className="mt-1 text-sm text-gray-500">
-                  View your purchases and track their progress.
-                </p>
-              </div>
             </div>
+          ) : filteredOrders.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px] text-left">
+                <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold">Order ID</th>
+                    <th className="px-6 py-4 font-semibold">Products</th>
+                    <th className="px-6 py-4 font-semibold">Order Date</th>
+                    <th className="px-6 py-4 font-semibold">Total</th>
+                    <th className="px-6 py-4 font-semibold">Status</th>
+                  </tr>
+                </thead>
 
-            <button
-              type="button"
-              onClick={() => void loadOrders()}
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-60 sm:px-4 sm:py-3"
-            >
-              <RefreshCw
-                size={17}
-                className={loading ? "animate-spin" : ""}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-          </header>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredOrders.map((order) => (
+                    <tr
+                      key={order.id}
+                      className="transition hover:bg-orange-50/40"
+                    >
+                      <td className="whitespace-nowrap px-6 py-5 text-sm font-semibold text-gray-900">
+                        {order.id}
+                      </td>
 
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">Total Orders</p>
-                <ShoppingBag className="text-orange-500" size={22} />
-              </div>
-              <p className="mt-3 text-3xl font-bold text-gray-900">
-                {loading ? "..." : orders.length}
-              </p>
-            </div>
+                      <td className="max-w-xs px-6 py-5 text-sm text-gray-700">
+                        {order.products}
+                      </td>
 
-            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">In Progress</p>
-                <Truck className="text-blue-500" size={22} />
-              </div>
-              <p className="mt-3 text-3xl font-bold text-gray-900">
-                {loading ? "..." : inProgressCount}
-              </p>
-            </div>
+                      <td className="whitespace-nowrap px-6 py-5 text-sm text-gray-500">
+                        {order.date}
+                      </td>
 
-            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">Delivered</p>
-                <Package className="text-green-500" size={22} />
-              </div>
-              <p className="mt-3 text-3xl font-bold text-gray-900">
-                {loading ? "..." : deliveredCount}
-              </p>
-            </div>
-          </section>
+                      <td className="whitespace-nowrap px-6 py-5 text-sm font-semibold text-gray-900">
+                        {formatCurrency(order.total)}
+                      </td>
 
-          <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <div className="relative flex-1">
-                <Search
-                  size={19}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search by order ID or product..."
-                  className="w-full rounded-lg border border-gray-200 py-3 pl-10 pr-4 text-sm outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-                />
-              </div>
-
-              <select
-                value={selectedStatus}
-                onChange={(event) => setSelectedStatus(event.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-orange-500"
-                aria-label="Filter orders by status"
-              >
-                <option value="All">All statuses</option>
-                {validStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <div className="border-b border-gray-100 p-5 sm:p-6">
-              <h2 className="text-lg font-bold text-gray-900">
-                Order History
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                {loading
-                  ? "Loading your orders..."
-                  : `${filteredOrders.length} ${
-                      filteredOrders.length === 1 ? "order" : "orders"
-                    } found`}
-              </p>
-            </div>
-
-            {loading ? (
-              <div className="px-6 py-14 text-center text-sm text-gray-500">
-                Loading your orders...
-              </div>
-            ) : error ? (
-              <div className="px-6 py-14 text-center">
-                <p className="text-sm text-red-600">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => void loadOrders()}
-                  className="mt-4 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
-                >
-                  Try Again
-                </button>
-              </div>
-            ) : filteredOrders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] text-left">
-                  <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                    <tr>
-                      <th className="px-6 py-4 font-semibold">Order ID</th>
-                      <th className="px-6 py-4 font-semibold">Products</th>
-                      <th className="px-6 py-4 font-semibold">Order Date</th>
-                      <th className="px-6 py-4 font-semibold">Total</th>
-                      <th className="px-6 py-4 font-semibold">Status</th>
+                      <td className="px-6 py-5">
+                        <span
+                          className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${getStatusStyle(
+                            order.status
+                          )}`}
+                        >
+                          {order.status}
+                        </span>
+                      </td>
                     </tr>
-                  </thead>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="px-6 py-14 text-center">
+              <Package size={38} className="mx-auto text-gray-300" />
 
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredOrders.map((order) => (
-                      <tr
-                        key={order.id}
-                        className="transition hover:bg-orange-50/40"
-                      >
-                        <td className="whitespace-nowrap px-6 py-5 text-sm font-semibold text-gray-900">
-                          {order.id}
-                        </td>
-                        <td className="max-w-xs px-6 py-5 text-sm text-gray-700">
-                          {order.products}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-5 text-sm text-gray-500">
-                          {order.date}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-5 text-sm font-semibold text-gray-900">
-                          {formatCurrency(order.total)}
-                        </td>
-                        <td className="px-6 py-5">
-                          <span
-                            className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold ${getStatusStyle(
-                              order.status
-                            )}`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="px-6 py-14 text-center">
-                <Package size={38} className="mx-auto text-gray-300" />
-                <h3 className="mt-4 font-semibold text-gray-900">
-                  {orders.length === 0 ? "No orders yet" : "No orders found"}
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  {orders.length === 0
-                    ? "Your purchases will appear here after you place an order."
-                    : "Try another search or choose a different status."}
-                </p>
+              <h3 className="mt-4 font-semibold text-gray-900">
+                {orders.length === 0 ? "No orders yet" : "No orders found"}
+              </h3>
 
-                {orders.length === 0 && (
-                  <Link
-                    to="/shop"
-                    className="mt-5 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-600"
-                  >
-                    <ShoppingBag size={18} />
-                    Start Shopping
-                  </Link>
-                )}
-              </div>
-            )}
-          </section>
-        </div>
-      </main>
+              <p className="mt-2 text-sm text-gray-500">
+                {orders.length === 0
+                  ? "Your purchases will appear here after you place an order."
+                  : "Try another search or choose a different status."}
+              </p>
+
+              {orders.length === 0 && (
+                <Link
+                  to="/shop"
+                  className="mt-5 inline-flex items-center gap-2 rounded-lg bg-orange-500 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-600"
+                >
+                  <ShoppingBag size={18} />
+                  Start Shopping
+                </Link>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

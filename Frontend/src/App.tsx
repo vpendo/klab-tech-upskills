@@ -29,6 +29,7 @@ import Customers from "./Pages/Dashboard/Customers";
 import Settings from "./Pages/Dashboard/Settings";
 
 // Customer pages
+import CustomerLayout from "./Pages/Dashboard/CustomerLayout";
 import CustomerDashboard from "./Pages/Dashboard/CustomerDashboard";
 import MyOrders from "./Pages/Dashboard/MyOrders";
 import MyProfile from "./Pages/Dashboard/MyProfile";
@@ -37,7 +38,6 @@ import MySettings from "./Pages/Dashboard/MySettings";
 const App = () => {
   const location = useLocation();
 
-  // Hide the store Navbar and Footer on dashboard pages.
   const isDashboard =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/account");
@@ -59,13 +59,13 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Shopping pages */}
+        {/* Public shopping pages */}
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/wishlist" element={<Wishlist />} />
 
-        {/* Admin dashboard with shared layout */}
+        {/* Admin dashboard */}
         <Route path="/dashboard" element={<AdminLayout />}>
           <Route index element={<Navigate to="admin" replace />} />
           <Route path="admin" element={<AdminDashboard />} />
@@ -73,18 +73,18 @@ const App = () => {
           <Route path="orders" element={<Order />} />
           <Route path="customers" element={<Customers />} />
           <Route path="settings" element={<Settings />} />
-
-          {/* Store page inside the admin layout */}
           <Route path="shop" element={<Shop />} />
         </Route>
 
-        {/* Customer dashboard */}
-        <Route path="/account" element={<CustomerDashboard />} />
-        <Route path="/account/cart" element={<Cart />} />
-        <Route path="/account/wishlist" element={<Wishlist />} />
-        <Route path="/account/orders" element={<MyOrders />} />
-        <Route path="/account/profile" element={<MyProfile />} />
-        <Route path="/account/settings" element={<MySettings />} />
+        {/* Customer dashboard with shared sidebar */}
+        <Route path="/account" element={<CustomerLayout />}>
+          <Route index element={<CustomerDashboard />} />
+          <Route path="cart" element={<Cart />} />
+          <Route path="wishlist" element={<Wishlist />} />
+          <Route path="orders" element={<MyOrders />} />
+          <Route path="profile" element={<MyProfile />} />
+          <Route path="settings" element={<MySettings />} />
+        </Route>
 
         {/* 404 page */}
         <Route

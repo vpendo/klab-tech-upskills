@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -17,45 +18,45 @@ interface CustomerSidebarProps {
   onLogout?: () => void;
 }
 
+const links = [
+  {
+    name: "Dashboard",
+    path: "/account",
+    icon: LayoutDashboard,
+    end: true,
+  },
+  {
+    name: "My Orders",
+    path: "/account/orders",
+    icon: ShoppingBag,
+  },
+  {
+    name: "My Cart",
+    path: "/account/cart",
+    icon: ShoppingCart,
+  },
+  {
+    name: "My Wishlist",
+    path: "/account/wishlist",
+    icon: Heart,
+  },
+  {
+    name: "My Profile",
+    path: "/account/profile",
+    icon: UserRound,
+  },
+  {
+    name: "Settings",
+    path: "/account/settings",
+    icon: Settings,
+  },
+];
+
 export default function CustomerSidebar({
   isOpen = false,
   onClose,
   onLogout,
 }: CustomerSidebarProps) {
-  const links = [
-    {
-      name: "Dashboard",
-      path: "/account",
-      icon: LayoutDashboard,
-      end: true,
-    },
-    {
-      name: "My Orders",
-      path: "/account/orders",
-      icon: ShoppingBag,
-    },
-    {
-      name: "My Cart",
-      path: "/account/cart",
-      icon: ShoppingCart,
-    },
-    {
-      name: "My Wishlist",
-      path: "/account/wishlist",
-      icon: Heart,
-    },
-    {
-      name: "My Profile",
-      path: "/account/profile",
-      icon: UserRound,
-    },
-    {
-      name: "Settings",
-      path: "/account/settings",
-      icon: Settings,
-    },
-  ];
-
   return (
     <>
       {isOpen && (
@@ -68,6 +69,7 @@ export default function CustomerSidebar({
       )}
 
       <aside
+        id="customer-sidebar"
         aria-label="Customer navigation"
         className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-30 lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -88,7 +90,7 @@ export default function CustomerSidebar({
             type="button"
             aria-label="Close sidebar"
             onClick={onClose}
-            className="rounded-lg p-2 text-gray-500 hover:bg-orange-50 hover:text-orange-500 lg:hidden"
+            className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-orange-50 hover:text-orange-500 lg:hidden"
           >
             <X size={20} />
           </button>
@@ -100,7 +102,7 @@ export default function CustomerSidebar({
             My Account
           </p>
 
-          <h2 className="mt-2 text-lg font-bold text-black">
+          <h2 className="mt-2 text-lg font-bold text-gray-900">
             Customer Dashboard
           </h2>
 
@@ -116,7 +118,7 @@ export default function CustomerSidebar({
         >
           {links.map(({ name, path, icon: Icon, end }) => (
             <NavLink
-              key={name}
+              key={path}
               to={path}
               end={end}
               onClick={onClose}
@@ -130,7 +132,11 @@ export default function CustomerSidebar({
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={20} strokeWidth={isActive ? 2.4 : 2} />
+                  <Icon
+                    size={20}
+                    strokeWidth={isActive ? 2.4 : 2}
+                    aria-hidden="true"
+                  />
                   <span>{name}</span>
                 </>
               )}
@@ -145,7 +151,7 @@ export default function CustomerSidebar({
             onClick={onClose}
             className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-600"
           >
-            <Store size={20} />
+            <Store size={20} aria-hidden="true" />
             <span>Shop Products</span>
           </NavLink>
 
@@ -154,7 +160,7 @@ export default function CustomerSidebar({
             onClick={onLogout}
             className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
           >
-            <LogOut size={20} />
+            <LogOut size={20} aria-hidden="true" />
             <span>Log Out</span>
           </button>
         </div>

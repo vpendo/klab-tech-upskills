@@ -1,9 +1,6 @@
+
 import { useEffect, useState } from "react";
-import {
-  Link,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -26,7 +23,6 @@ const IMAGE_PLACEHOLDER =
 function Cart() {
   const navigate = useNavigate();
   const location = useLocation();
-
   const isCustomerPage = location.pathname.startsWith("/account/");
 
   const {
@@ -42,7 +38,6 @@ function Cart() {
 
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Only logged-in customers can use the cart.
   useEffect(() => {
     const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
@@ -84,23 +79,13 @@ function Cart() {
 
   const navigationLinks = (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-      {isCustomerPage ? (
-        <Link
-          to="/account"
-          className="inline-flex items-center gap-2 rounded-lg border border-orange-200 bg-white px-4 py-2.5 text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
-        >
-          <ArrowLeft size={18} />
-          Back to Dashboard
-        </Link>
-      ) : (
-        <Link
-          to="/shop"
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
-        >
-          <ArrowLeft size={18} />
-          Continue Shopping
-        </Link>
-      )}
+      <Link
+        to="/shop"
+        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+      >
+        <ArrowLeft size={18} />
+        Continue Shopping
+      </Link>
 
       {isCustomerPage && (
         <Link
@@ -174,12 +159,10 @@ function Cart() {
                 </button>
 
                 <Link
-                  to={isCustomerPage ? "/account" : "/shop"}
+                  to="/shop"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
                 >
-                  {isCustomerPage
-                    ? "Back to Dashboard"
-                    : "Continue Shopping"}
+                  Continue Shopping
                   <ArrowRight size={18} />
                 </Link>
               </div>
@@ -215,12 +198,10 @@ function Cart() {
 
               <div className="mt-7">
                 <Link
-                  to={isCustomerPage ? "/account" : "/shop"}
+                  to="/shop"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
                 >
-                  {isCustomerPage
-                    ? "Back to Dashboard"
-                    : "Continue Shopping"}
+                  Continue Shopping
                   <ArrowRight size={18} />
                 </Link>
               </div>
