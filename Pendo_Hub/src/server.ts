@@ -1,4 +1,3 @@
-
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -9,6 +8,7 @@ import authRouter from "./router/auth.router";
 import CartRoute from "./router/cart.router";
 import WishlistRoute from "./router/wishlist.router";
 import OrderRoute from "./router/order.router";
+import customerRouter from "./router/customer.routes";
 
 import { connectDB } from "./config/db";
 import swaggerSpec from "./config/swagger";
@@ -51,6 +51,9 @@ app.use("/api", WishlistRoute);
 
 // Customer and admin order routes.
 app.use("/api", OrderRoute);
+
+// Admin customer management routes.
+app.use("/api/users", customerRouter);
 
 // Swagger documentation.
 app.use(

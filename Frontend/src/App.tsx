@@ -1,4 +1,5 @@
-import { Routes, Route, useLocation, Link } from "react-router-dom";
+
+import { Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
 
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/footer";
@@ -20,9 +21,11 @@ import ProductDetails from "./Pages/ProductDetails";
 import Wishlist from "./Pages/Wishlist";
 
 // Admin pages
+import AdminLayout from "./Pages/Dashboard/AdminLayout";
 import AdminDashboard from "./Pages/Dashboard/AdminDashboard";
 import ProductsManagement from "./Pages/Dashboard/ProductsManagement";
 import Order from "./Pages/Dashboard/Orders";
+import Customers from "./Pages/Dashboard/Customers";
 import Settings from "./Pages/Dashboard/Settings";
 
 // Customer pages
@@ -34,7 +37,7 @@ import MySettings from "./Pages/Dashboard/MySettings";
 const App = () => {
   const location = useLocation();
 
-  // Hide the public store Navbar and Footer on dashboard pages.
+  // Hide the store Navbar and Footer on dashboard pages.
   const isDashboard =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/account");
@@ -62,49 +65,26 @@ const App = () => {
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/wishlist" element={<Wishlist />} />
 
-        {/* Admin dashboard */}
-        <Route
-          path="/dashboard/admin"
-          element={<AdminDashboard />}
-        />
-        <Route
-          path="/dashboard/products"
-          element={<ProductsManagement />}
-        />
-        <Route
-          path="/dashboard/orders"
-          element={<Order />}
-        />
-        <Route
-          path="/dashboard/settings"
-          element={<Settings />}
-        />
+        {/* Admin dashboard with shared layout */}
+        <Route path="/dashboard" element={<AdminLayout />}>
+          <Route index element={<Navigate to="admin" replace />} />
+          <Route path="admin" element={<AdminDashboard />} />
+          <Route path="products" element={<ProductsManagement />} />
+          <Route path="orders" element={<Order />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="settings" element={<Settings />} />
+
+          {/* Store page inside the admin layout */}
+          <Route path="shop" element={<Shop />} />
+        </Route>
 
         {/* Customer dashboard */}
-        <Route
-          path="/account"
-          element={<CustomerDashboard />}
-        />
-        <Route
-          path="/account/cart"
-          element={<Cart />}
-        />
-        <Route
-          path="/account/wishlist"
-          element={<Wishlist />}
-        />
-        <Route
-          path="/account/orders"
-          element={<MyOrders />}
-        />
-        <Route
-          path="/account/profile"
-          element={<MyProfile />}
-        />
-        <Route
-          path="/account/settings"
-          element={<MySettings />}
-        />
+        <Route path="/account" element={<CustomerDashboard />} />
+        <Route path="/account/cart" element={<Cart />} />
+        <Route path="/account/wishlist" element={<Wishlist />} />
+        <Route path="/account/orders" element={<MyOrders />} />
+        <Route path="/account/profile" element={<MyProfile />} />
+        <Route path="/account/settings" element={<MySettings />} />
 
         {/* 404 page */}
         <Route

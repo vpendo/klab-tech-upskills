@@ -60,7 +60,6 @@ export default function AdminSidebar({
 
   return (
     <>
-      {/* Mobile backdrop */}
       {isOpen && (
         <button
           type="button"
@@ -70,7 +69,6 @@ export default function AdminSidebar({
         />
       )}
 
-      {/* Sidebar */}
       <aside
         id="admin-sidebar"
         aria-label="Admin navigation"
@@ -78,7 +76,6 @@ export default function AdminSidebar({
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Brand */}
         <div className="flex h-20 shrink-0 items-center justify-between border-b border-gray-100 px-5">
           <NavLink
             to="/dashboard/admin"
@@ -99,7 +96,6 @@ export default function AdminSidebar({
           </button>
         </div>
 
-        {/* Workspace information */}
         <div className="mx-4 mt-5 rounded-xl bg-orange-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">
             Workspace
@@ -112,7 +108,6 @@ export default function AdminSidebar({
           </p>
         </div>
 
-        {/* Navigation links */}
         <nav
           className="flex-1 space-y-1 overflow-y-auto px-3 py-6"
           aria-label="Main menu"
@@ -138,7 +133,6 @@ export default function AdminSidebar({
               {({ isActive }) => (
                 <>
                   <Icon size={20} aria-hidden="true" />
-
                   <span className="flex-1">{name}</span>
 
                   {name === "Orders" &&
@@ -157,10 +151,7 @@ export default function AdminSidebar({
                     )}
 
                   {isActive && (
-                    <ChevronRight
-                      size={16}
-                      aria-hidden="true"
-                    />
+                    <ChevronRight size={16} aria-hidden="true" />
                   )}
                 </>
               )}
@@ -168,12 +159,17 @@ export default function AdminSidebar({
           ))}
         </nav>
 
-        {/* Bottom actions */}
         <div className="shrink-0 space-y-2 border-t border-gray-100 p-4">
           <NavLink
-            to="/shop"
+            to="/dashboard/shop"
             onClick={closeSidebar}
-            className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 ${
+                isActive
+                  ? "bg-orange-50 text-orange-600"
+                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
+              }`
+            }
           >
             <Store size={19} aria-hidden="true" />
             <span>View Store</span>

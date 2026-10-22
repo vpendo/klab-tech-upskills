@@ -22,7 +22,6 @@ import {
 } from "../../services/productService";
 import type { Product } from "../../Types/product";
 
-import AdminSidebar from "../../Components/Dash/AdminSidebar";
 import AdminHeader from "../../Components/Dash/AdminHeader";
 import AdminStatCard from "../../Components/Dash/AdminStatCard";
 import api from "../../services/api";
@@ -57,7 +56,6 @@ const isOrderStatus = (status: unknown): status is OrderStatus =>
   status === "Cancelled";
 
 export default function AdminDashboard() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -79,6 +77,7 @@ export default function AdminDashboard() {
 
   const navigate = useNavigate();
 
+  // Check that the logged-in user is an admin.
   useEffect(() => {
     const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
@@ -136,7 +135,7 @@ export default function AdminDashboard() {
     setOrdersError("");
 
     try {
-      // This assumes api's base URL does not already end in /api.
+      // Assumes the API base URL does not already end in /api.
       const response = await api.get("/api/orders");
       const data = response.data;
 
@@ -227,7 +226,9 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Orders",
-      value: ordersLoading ? "..." : orders.length.toLocaleString("en-RW"),
+      value: ordersLoading
+        ? "..."
+        : orders.length.toLocaleString("en-RW"),
       description: ordersLoading
         ? "Loading orders..."
         : `${activeOrders.length} active orders`,
@@ -236,14 +237,18 @@ export default function AdminDashboard() {
     },
     {
       title: "Delivered Order Value",
-      value: ordersLoading ? "..." : formatPrice(deliveredOrderValue),
+      value: ordersLoading
+        ? "..."
+        : formatPrice(deliveredOrderValue),
       description: "Value of delivered orders",
       icon: TrendingUp,
       iconClassName: "bg-green-100 text-green-600",
     },
     {
       title: "Pending Orders",
-      value: ordersLoading ? "..." : pendingOrders.toLocaleString("en-RW"),
+      value: ordersLoading
+        ? "..."
+        : pendingOrders.toLocaleString("en-RW"),
       description: "Orders awaiting review",
       icon: Clock,
       iconClassName: "bg-amber-100 text-amber-600",
@@ -259,7 +264,10 @@ export default function AdminDashboard() {
   if (!isAuthorized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f8f7f5]">
-        <RefreshCw className="animate-spin text-orange-500" size={30} />
+        <RefreshCw
+          className="animate-spin text-orange-500"
+          size={30}
+        />
         <span className="ml-3 text-sm text-gray-600">
           Checking administrator access...
         </span>
@@ -268,308 +276,301 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f7f5] text-gray-900 lg:flex">
-      <AdminSidebar
-        isOpen={menuOpen}
-        onClose={() => setMenuOpen(false)}
+    <div className="min-h-screen bg-[#f8f7f5] text-gray-900">
+      <AdminHeader
+        title="Admin Dashboard"
+        subtitle="Manage your fashion store in one place."
+        adminName={adminName}
+        adminEmail={adminEmail || "Administrator"}
         onLogout={handleLogout}
-        pendingOrders={pendingOrders}
       />
 
-      <div className="min-w-0 flex-1">
-        <AdminHeader
-          title="Admin Dashboard"
-          subtitle="Manage your fashion store in one place."
-          adminName={adminName}
-          adminEmail={adminEmail || "Administrator"}
-          onMenuClick={() => setMenuOpen(true)}
-          onLogout={handleLogout}
-        />
-
-        <main className="mx-auto max-w-[1600px] space-y-8 p-4 sm:p-6 lg:p-8">
-          {(productsError || ordersError) && (
-            <div
-              role="alert"
-              className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                {productsError && <p>{productsError}</p>}
-                {ordersError && <p>{ordersError}</p>}
-              </div>
-
-              <button
-                type="button"
-                onClick={refreshDashboard}
-                disabled={productsLoading || ordersLoading}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 font-semibold hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <RefreshCw size={16} />
-                Try again
-              </button>
-            </div>
-          )}
-
-          <section className="flex flex-col justify-between gap-5 rounded-2xl bg-[#201b18] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+      <main className="mx-auto max-w-[1600px] space-y-8 p-4 sm:p-6 lg:p-8">
+        {(productsError || ordersError) && (
+          <div
+            role="alert"
+            className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"
+          >
             <div>
-              <p className="mb-2 text-sm font-semibold tracking-wide text-orange-300">
-                YOUR STORE AT A GLANCE
-              </p>
-
-              <h2 className="text-2xl font-bold sm:text-3xl">
-                Welcome back, {adminName}!
-              </h2>
-
-              <p className="mt-2 max-w-lg text-sm leading-6 text-gray-300">
-                Manage your products, review customer orders, and
-                keep PendoHub looking its best.
-              </p>
+              {productsError && <p>{productsError}</p>}
+              {ordersError && <p>{ordersError}</p>}
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={refreshDashboard}
-                disabled={productsLoading || ordersLoading}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <RefreshCw
-                  size={17}
-                  className={
-                    productsLoading || ordersLoading
-                      ? "animate-spin"
-                      : ""
-                  }
-                />
-                Refresh Data
-              </button>
+            <button
+              type="button"
+              onClick={refreshDashboard}
+              disabled={productsLoading || ordersLoading}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 font-semibold hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw size={16} />
+              Try again
+            </button>
+          </div>
+        )}
 
-              <Link
-                to="/dashboard/products"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-600"
-              >
-                <Plus size={18} />
-                Add New Product
-              </Link>
-            </div>
-          </section>
+        <section className="flex flex-col justify-between gap-5 rounded-2xl bg-[#201b18] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+          <div>
+            <p className="mb-2 text-sm font-semibold tracking-wide text-orange-300">
+              YOUR STORE AT A GLANCE
+            </p>
 
-          <section>
-            <div className="mb-5">
-              <h2 className="text-lg font-bold">Store Overview</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Product and order figures are loaded from your backend.
-              </p>
-            </div>
+            <h2 className="text-2xl font-bold sm:text-3xl">
+              Welcome back, {adminName}!
+            </h2>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-              {stats.map((stat) => (
-                <AdminStatCard
-                  key={stat.title}
-                  title={stat.title}
-                  value={stat.value}
-                  description={stat.description}
-                  icon={stat.icon}
-                  iconClassName={stat.iconClassName}
-                />
-              ))}
-            </div>
-          </section>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-gray-300">
+              Manage your products, review customer orders, and
+              keep PendoHub looking its best.
+            </p>
+          </div>
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <div className="rounded-2xl border border-gray-200 bg-white xl:col-span-2">
-              <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5">
-                <div>
-                  <h2 className="font-bold">Low Stock Alert</h2>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Products with 5 or fewer items in the loaded list.
-                  </p>
-                </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={refreshDashboard}
+              disabled={productsLoading || ordersLoading}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw
+                size={17}
+                className={
+                  productsLoading || ordersLoading
+                    ? "animate-spin"
+                    : ""
+                }
+              />
+              Refresh Data
+            </button>
 
-                <AlertTriangle className="text-amber-600" size={21} />
+            <Link
+              to="/dashboard/products"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-600"
+            >
+              <Plus size={18} />
+              Add New Product
+            </Link>
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-5">
+            <h2 className="text-lg font-bold">Store Overview</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Product and order figures are loaded from your backend.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+            {stats.map((stat) => (
+              <AdminStatCard
+                key={stat.title}
+                title={stat.title}
+                value={stat.value}
+                description={stat.description}
+                icon={stat.icon}
+                iconClassName={stat.iconClassName}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="rounded-2xl border border-gray-200 bg-white xl:col-span-2">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5">
+              <div>
+                <h2 className="font-bold">Low Stock Alert</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  Products with 5 or fewer items in the loaded list.
+                </p>
               </div>
 
-              <div className="space-y-4 p-5">
-                {productsLoading ? (
-                  <p className="py-6 text-center text-sm text-gray-500">
-                    Loading inventory...
-                  </p>
-                ) : productsError ? (
-                  <p className="py-6 text-center text-sm text-red-600">
-                    Inventory could not be loaded.
-                  </p>
-                ) : lowStockProducts.length > 0 ? (
-                  lowStockProducts.slice(0, 5).map((product) => (
-                    <div
-                      key={product._id}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
-                          <Shirt size={20} />
-                        </div>
+              <AlertTriangle className="text-amber-600" size={21} />
+            </div>
 
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatPrice(product.price)}
-                          </p>
-                        </div>
+            <div className="space-y-4 p-5">
+              {productsLoading ? (
+                <p className="py-6 text-center text-sm text-gray-500">
+                  Loading inventory...
+                </p>
+              ) : productsError ? (
+                <p className="py-6 text-center text-sm text-red-600">
+                  Inventory could not be loaded.
+                </p>
+              ) : lowStockProducts.length > 0 ? (
+                lowStockProducts.slice(0, 5).map((product) => (
+                  <div
+                    key={product._id}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                        <Shirt size={20} />
                       </div>
 
-                      <span className="shrink-0 rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
-                        {product.quantity} left
-                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatPrice(product.price)}
+                        </p>
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="py-6 text-center">
-                    <Boxes size={30} className="mx-auto text-green-600" />
-                    <p className="mt-3 text-sm font-semibold">
-                      Stock looks good!
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      No low-stock products were found in the loaded list.
-                    </p>
+
+                    <span className="shrink-0 rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-600">
+                      {product.quantity} left
+                    </span>
                   </div>
-                )}
-
-                <Link
-                  to="/dashboard/products"
-                  className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600"
-                >
-                  Manage Products <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-white p-5">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="rounded-xl bg-blue-100 p-2.5 text-blue-700">
-                  <ShoppingBag size={21} />
-                </div>
-
-                <div>
-                  <h2 className="font-bold">Order Management</h2>
+                ))
+              ) : (
+                <div className="py-6 text-center">
+                  <Boxes
+                    size={30}
+                    className="mx-auto text-green-600"
+                  />
+                  <p className="mt-3 text-sm font-semibold">
+                    Stock looks good!
+                  </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    View and update customer orders.
+                    No low-stock products were found in the loaded list.
                   </p>
                 </div>
-              </div>
+              )}
 
-              <p className="text-sm leading-6 text-gray-600">
-                {ordersLoading
-                  ? "Loading orders from the backend..."
-                  : ordersError
-                    ? "Orders could not be loaded. Check your backend connection."
-                    : `You have ${orders.length} saved orders, including ${pendingOrders} pending orders.`}
-              </p>
-
-              <Link
-                to="/dashboard/orders"
-                className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
-              >
-                Manage Orders <ArrowRight size={16} />
-              </Link>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="mb-4 text-lg font-bold">Quick Actions</h2>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Link
                 to="/dashboard/products"
-                className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
+                className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600"
               >
-                <div className="rounded-xl bg-orange-100 p-3 text-orange-600">
-                  <Plus size={23} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">Manage Products</p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Add, edit, and delete products.
-                  </p>
-                </div>
-
-                <ArrowRight
-                  size={18}
-                  className="shrink-0 text-gray-400 group-hover:text-orange-600"
-                />
-              </Link>
-
-              <Link
-                to="/dashboard/orders"
-                className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
-              >
-                <div className="rounded-xl bg-blue-100 p-3 text-blue-600">
-                  <ShoppingBag size={23} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">Manage Orders</p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Review and update order statuses.
-                  </p>
-                </div>
-
-                <ArrowRight
-                  size={18}
-                  className="shrink-0 text-gray-400 group-hover:text-orange-600"
-                />
-              </Link>
-
-              <Link
-                to="/shop"
-                className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
-              >
-                <div className="rounded-xl bg-green-100 p-3 text-green-600">
-                  <Eye size={23} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">View Store</p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Browse the customer-facing store.
-                  </p>
-                </div>
-
-                <ArrowRight
-                  size={18}
-                  className="shrink-0 text-gray-400 group-hover:text-orange-600"
-                />
-              </Link>
-
-              <Link
-                to="/dashboard/settings"
-                className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
-              >
-                <div className="rounded-xl bg-orange-100 p-3 text-orange-600">
-                  <Settings size={23} />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">Store Settings</p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Manage store details and preferences.
-                  </p>
-                </div>
-
-                <ArrowRight
-                  size={18}
-                  className="shrink-0 text-gray-400 group-hover:text-orange-600"
-                />
+                Manage Products <ArrowRight size={16} />
               </Link>
             </div>
-          </section>
+          </div>
 
-          <footer className="border-t border-gray-200 py-5 text-center text-xs text-gray-500">
-            © {new Date().getFullYear()} PendoHub. All rights reserved.
-          </footer>
-        </main>
-      </div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-xl bg-blue-100 p-2.5 text-blue-700">
+                <ShoppingBag size={21} />
+              </div>
+
+              <div>
+                <h2 className="font-bold">Order Management</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  View and update customer orders.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm leading-6 text-gray-600">
+              {ordersLoading
+                ? "Loading orders from the backend..."
+                : ordersError
+                  ? "Orders could not be loaded. Check your backend connection."
+                  : `You have ${orders.length} saved orders, including ${pendingOrders} pending orders.`}
+            </p>
+
+            <Link
+              to="/dashboard/orders"
+              className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+            >
+              Manage Orders <ArrowRight size={16} />
+            </Link>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="mb-4 text-lg font-bold">Quick Actions</h2>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link
+              to="/dashboard/products"
+              className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
+            >
+              <div className="rounded-xl bg-orange-100 p-3 text-orange-600">
+                <Plus size={23} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Manage Products</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Add, edit, and delete products.
+                </p>
+              </div>
+
+              <ArrowRight
+                size={18}
+                className="shrink-0 text-gray-400 group-hover:text-orange-600"
+              />
+            </Link>
+
+            <Link
+              to="/dashboard/orders"
+              className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
+            >
+              <div className="rounded-xl bg-blue-100 p-3 text-blue-600">
+                <ShoppingBag size={23} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Manage Orders</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Review and update order statuses.
+                </p>
+              </div>
+
+              <ArrowRight
+                size={18}
+                className="shrink-0 text-gray-400 group-hover:text-orange-600"
+              />
+            </Link>
+
+            <Link
+              to="/shop"
+              className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
+            >
+              <div className="rounded-xl bg-green-100 p-3 text-green-600">
+                <Eye size={23} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">View Store</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Browse the customer-facing store.
+                </p>
+              </div>
+
+              <ArrowRight
+                size={18}
+                className="shrink-0 text-gray-400 group-hover:text-orange-600"
+              />
+            </Link>
+
+            <Link
+              to="/dashboard/settings"
+              className="group flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-orange-300 hover:shadow-sm"
+            >
+              <div className="rounded-xl bg-orange-100 p-3 text-orange-600">
+                <Settings size={23} />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Store Settings</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Manage store details and preferences.
+                </p>
+              </div>
+
+              <ArrowRight
+                size={18}
+                className="shrink-0 text-gray-400 group-hover:text-orange-600"
+              />
+            </Link>
+          </div>
+        </section>
+
+        <footer className="border-t border-gray-200 py-5 text-center text-xs text-gray-500">
+          © {new Date().getFullYear()} PendoHub. All rights reserved.
+        </footer>
+      </main>
     </div>
   );
 }

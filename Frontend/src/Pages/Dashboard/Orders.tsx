@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Search,
   ShoppingBag,
@@ -8,7 +7,6 @@ import {
   Truck,
   LoaderCircle,
   AlertCircle,
-  ArrowLeft,
 } from "lucide-react";
 
 import api from "../../services/api";
@@ -28,8 +26,6 @@ const statusOptions = [
 ];
 
 export default function Order() {
-  const navigate = useNavigate();
-
   const [orders, setOrders] = useState<OrderType[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -159,15 +155,6 @@ export default function Order() {
     <main className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard/admin")}
-            className="mb-6 inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-orange-500 hover:text-orange-600"
-          >
-            <ArrowLeft size={18} />
-            Back to Admin Dashboard
-          </button>
-
           <p className="text-sm font-semibold uppercase tracking-wider text-orange-600">
             PendoHub Administration
           </p>

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -10,7 +9,6 @@ import {
   AlertTriangle,
   X,
   Image as ImageIcon,
-  ArrowLeft,
 } from "lucide-react";
 import type { Product } from "../../Types/product";
 import {
@@ -57,8 +55,6 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function ProductsManagement() {
-  const navigate = useNavigate();
-
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -272,18 +268,9 @@ export default function ProductsManagement() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        {/* Page heading and dashboard navigation */}
+        {/* Page heading */}
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard/admin")}
-              className="mb-5 inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600"
-            >
-              <ArrowLeft size={18} />
-              Back to Dashboard
-            </button>
-
             <p className="text-sm font-medium text-orange-600">
               PendoHub Admin
             </p>
