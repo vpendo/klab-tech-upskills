@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -26,6 +25,7 @@ import type { Product } from "../../Types/product";
 import AdminSidebar from "../../Components/Dash/AdminSidebar";
 import AdminHeader from "../../Components/Dash/AdminHeader";
 import AdminStatCard from "../../Components/Dash/AdminStatCard";
+import api from "../../services/api";
 
 type OrderStatus =
   | "Pending"
@@ -34,11 +34,8 @@ type OrderStatus =
   | "Delivered"
   | "Cancelled";
 
-interface DemoOrder {
-  id: string;
-  customer: string;
-  date: string;
-  items: number;
+interface DashboardOrder {
+  _id: string;
   total: number;
   status: OrderStatus;
 }
@@ -49,76 +46,31 @@ interface LoggedInUser {
   role?: "customer" | "admin";
 }
 
-const demoOrders: DemoOrder[] = [
-  {
-    id: "PH-1005",
-    customer: "Alice Uwase",
-    date: "19 Oct 2026",
-    items: 2,
-    total: 55000,
-    status: "Pending",
-  },
-  {
-    id: "PH-1004",
-    customer: "Eric Niyonzima",
-    date: "18 Oct 2026",
-    items: 1,
-    total: 30000,
-    status: "Processing",
-  },
-  {
-    id: "PH-1003",
-    customer: "Diane Mukamana",
-    date: "17 Oct 2026",
-    items: 3,
-    total: 85000,
-    status: "Delivered",
-  },
-  {
-    id: "PH-1002",
-    customer: "Kevin Ishimwe",
-    date: "16 Oct 2026",
-    items: 1,
-    total: 25000,
-    status: "Shipped",
-  },
-  {
-    id: "PH-1001",
-    customer: "Grace Uwera",
-    date: "15 Oct 2026",
-    items: 2,
-    total: 60000,
-    status: "Cancelled",
-  },
-];
-
 const formatPrice = (price: number) =>
   `${price.toLocaleString("en-RW")} RWF`;
-
-const statusStyles: Record<OrderStatus, string> = {
-  Pending: "bg-amber-100 text-amber-800",
-  Processing: "bg-blue-100 text-blue-800",
-  Shipped: "bg-purple-100 text-purple-800",
-  Delivered: "bg-green-100 text-green-800",
-  Cancelled: "bg-red-100 text-red-800",
-};
 
 export default function AdminDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<DashboardOrder[]>([]);
+
   const [productStats, setProductStats] = useState<ProductStats>({
     totalProducts: 0,
     totalStock: 0,
     averagePrice: 0,
   });
+
   const [productsLoading, setProductsLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
+  const [ordersError, setOrdersError] = useState("");
+
   const [adminName, setAdminName] = useState("Admin");
   const [adminEmail, setAdminEmail] = useState("");
 
   const navigate = useNavigate();
 
-  // Check authentication and make sure only admins can access this page.
+  // Only allow logged-in admins to access this page.
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
@@ -171,28 +123,62 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  // Load saved customer orders from the backend.
+  const loadDashboardOrders = useCallback(async () => {
+    setOrdersLoading(true);
+    setOrdersError("");
+
+    try {
+      const response = await api.get("/orders");
+      const data = response.data;
+
+      const orderList: DashboardOrder[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data.orders)
+          ? data.orders
+          : Array.isArray(data.data)
+            ? data.data
+            : [];
+
+      setOrders(orderList);
+    } catch (error) {
+      console.error("Failed to load dashboard orders:", error);
+      setOrdersError(
+        "Unable to load orders. Check your backend connection and order API."
+      );
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, []);
+
+  const refreshDashboard = useCallback(() => {
+    void Promise.all([
+      loadDashboardProducts(),
+      loadDashboardOrders(),
+    ]);
+  }, [loadDashboardProducts, loadDashboardOrders]);
+
   useEffect(() => {
-    void loadDashboardProducts();
-  }, [loadDashboardProducts]);
+    refreshDashboard();
+  }, [refreshDashboard]);
 
   const lowStockProducts = products
     .filter((product) => product.quantity <= 5)
     .sort((a, b) => a.quantity - b.quantity);
 
-  // These order calculations are still based on demonstration data.
-  const activeOrders = demoOrders.filter(
+  const activeOrders = orders.filter(
     (order) =>
       order.status !== "Delivered" &&
       order.status !== "Cancelled"
   );
 
-  const pendingOrders = demoOrders.filter(
+  const pendingOrders = orders.filter(
     (order) => order.status === "Pending"
   ).length;
 
-  const deliveredOrderValue = demoOrders
+  const deliveredOrderValue = orders
     .filter((order) => order.status === "Delivered")
-    .reduce((sum, order) => sum + order.total, 0);
+    .reduce((sum, order) => sum + Number(order.total || 0), 0);
 
   const stats = [
     {
@@ -215,21 +201,23 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Orders",
-      value: demoOrders.length.toLocaleString("en-RW"),
-      description: `${activeOrders.length} active sample orders`,
+      value: ordersLoading ? "..." : orders.length.toLocaleString("en-RW"),
+      description: ordersLoading
+        ? "Loading orders..."
+        : `${activeOrders.length} active orders`,
       icon: ShoppingBag,
       iconClassName: "bg-blue-100 text-blue-600",
     },
     {
       title: "Delivered Order Value",
-      value: formatPrice(deliveredOrderValue),
-      description: "Value of delivered sample orders",
+      value: ordersLoading ? "..." : formatPrice(deliveredOrderValue),
+      description: "Value of delivered orders",
       icon: TrendingUp,
       iconClassName: "bg-green-100 text-green-600",
     },
     {
       title: "Pending Orders",
-      value: pendingOrders.toLocaleString("en-RW"),
+      value: ordersLoading ? "..." : pendingOrders.toLocaleString("en-RW"),
       description: "Orders awaiting review",
       icon: Clock,
       iconClassName: "bg-amber-100 text-amber-600",
@@ -262,15 +250,19 @@ export default function AdminDashboard() {
         />
 
         <main className="mx-auto max-w-[1600px] space-y-8 p-4 sm:p-6 lg:p-8">
-          {productsError && (
+          {(productsError || ordersError) && (
             <div
               role="alert"
               className="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"
             >
-              <p>{productsError}</p>
+              <div>
+                {productsError && <p>{productsError}</p>}
+                {ordersError && <p>{ordersError}</p>}
+              </div>
+
               <button
                 type="button"
-                onClick={() => void loadDashboardProducts()}
+                onClick={refreshDashboard}
                 className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 font-semibold hover:bg-red-100"
               >
                 <RefreshCw size={16} />
@@ -298,13 +290,17 @@ export default function AdminDashboard() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={() => void loadDashboardProducts()}
-                disabled={productsLoading}
+                onClick={refreshDashboard}
+                disabled={productsLoading || ordersLoading}
                 className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RefreshCw
                   size={17}
-                  className={productsLoading ? "animate-spin" : ""}
+                  className={
+                    productsLoading || ordersLoading
+                      ? "animate-spin"
+                      : ""
+                  }
                 />
                 Refresh Data
               </button>
@@ -323,7 +319,7 @@ export default function AdminDashboard() {
             <div className="mb-5">
               <h2 className="text-lg font-bold">Store Overview</h2>
               <p className="mt-1 text-sm text-gray-500">
-                Product figures are loaded from your database. Order figures are sample data.
+                Product and order figures are loaded from your backend.
               </p>
             </div>
 
@@ -342,92 +338,16 @@ export default function AdminDashboard() {
           </section>
 
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white xl:col-span-2">
+            <div className="rounded-2xl border border-gray-200 bg-white xl:col-span-2">
               <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-5">
-                <div>
-                  <h2 className="font-bold">Recent Orders</h2>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Sample orders for dashboard layout.
-                  </p>
-                </div>
-
-                <Link
-                  to="/dashboard/orders"
-                  className="flex shrink-0 items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700"
-                >
-                  View all <ArrowRight size={16} />
-                </Link>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[650px] text-left text-sm">
-                  <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                    <tr>
-                      <th className="px-5 py-4 font-semibold">Order</th>
-                      <th className="px-5 py-4 font-semibold">Customer</th>
-                      <th className="px-5 py-4 font-semibold">Total</th>
-                      <th className="px-5 py-4 font-semibold">Status</th>
-                      <th className="px-5 py-4 font-semibold">Details</th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-gray-100">
-                    {demoOrders.map((order) => (
-                      <tr
-                        key={order.id}
-                        className="transition hover:bg-gray-50"
-                      >
-                        <td className="whitespace-nowrap px-5 py-4 font-semibold">
-                          {order.id}
-                          <p className="mt-1 text-xs font-normal text-gray-500">
-                            {order.date}
-                          </p>
-                        </td>
-
-                        <td className="whitespace-nowrap px-5 py-4 text-gray-600">
-                          {order.customer}
-                        </td>
-
-                        <td className="whitespace-nowrap px-5 py-4 font-medium">
-                          {formatPrice(order.total)}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <span
-                            className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[order.status]}`}
-                          >
-                            {order.status}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <Link
-                            to={`/dashboard/orders/${order.id}`}
-                            aria-label={`View order ${order.id}`}
-                            className="inline-flex rounded-lg p-2 text-gray-500 hover:bg-orange-50 hover:text-orange-600"
-                          >
-                            <ArrowRight size={18} />
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-gray-200 bg-white">
-              <div className="flex items-center gap-3 border-b border-gray-100 p-5">
-                <div className="rounded-xl bg-amber-100 p-2.5 text-amber-700">
-                  <AlertTriangle size={21} />
-                </div>
-
                 <div>
                   <h2 className="font-bold">Low Stock Alert</h2>
                   <p className="mt-1 text-xs text-gray-500">
                     Products with 5 or fewer items.
                   </p>
                 </div>
+
+                <AlertTriangle className="text-amber-600" size={21} />
               </div>
 
               <div className="space-y-4 p-5">
@@ -484,6 +404,36 @@ export default function AdminDashboard() {
                   Manage Products <ArrowRight size={16} />
                 </Link>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 bg-white p-5">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-xl bg-blue-100 p-2.5 text-blue-700">
+                  <ShoppingBag size={21} />
+                </div>
+
+                <div>
+                  <h2 className="font-bold">Order Management</h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    View and update customer orders.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm leading-6 text-gray-600">
+                {ordersLoading
+                  ? "Loading orders from the backend..."
+                  : ordersError
+                    ? "Orders could not be loaded. Check your backend connection."
+                    : `You have ${orders.length} saved orders, including ${pendingOrders} pending orders.`}
+              </p>
+
+              <Link
+                to="/dashboard/orders"
+                className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+              >
+                Manage Orders <ArrowRight size={16} />
+              </Link>
             </div>
           </section>
 

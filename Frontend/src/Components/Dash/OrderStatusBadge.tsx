@@ -1,3 +1,4 @@
+
 import type { OrderStatus } from "./OrderTable";
 
 interface OrderStatusBadgeProps {
@@ -12,13 +13,19 @@ const statusStyles: Record<OrderStatus, string> = {
   Cancelled: "bg-red-50 text-red-700 ring-red-600/20",
 };
 
+const fallbackStyle =
+  "bg-gray-50 text-gray-700 ring-gray-600/20";
+
 export default function OrderStatusBadge({
   status,
 }: OrderStatusBadgeProps) {
+  const style =
+    statusStyles[status] ?? fallbackStyle;
+
   return (
     <span
       role="status"
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${statusStyles[status]}`}
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${style}`}
     >
       {status}
     </span>

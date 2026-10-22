@@ -1,4 +1,7 @@
-import { X, Save } from "lucide-react";
+
+import { useState } from "react";
+import { X, Save, LoaderCircle } from "lucide-react";
+
 import {
   formatCurrency,
   type Order,
@@ -9,14 +12,22 @@ import OrderStatusBadge from "../../Components/Dash/OrderStatusBadge";
 interface OrderDetailsProps {
   order: Order;
   onClose: () => void;
-  onStatusChange: (orderId: string, status: OrderStatus) => void;
+  onStatusChange: (
+    orderId: string,
+    status: OrderStatus
+  ) => Promise<void>;
+  updatingStatus?: boolean;
 }
 
 export default function OrderDetails({
   order,
   onClose,
   onStatusChange,
+  updatingStatus = false,
 }: OrderDetailsProps) {
+  const [selectedStatus, setSelectedStatus] =
+    useState<OrderStatus>(order.status);
+
   const statuses: OrderStatus[] = [
     "Pending",
     "Processing",
@@ -25,16 +36,31 @@ export default function OrderDetails({
     "Cancelled",
   ];
 
+  const totalItems = order.items.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
+
+  const hasStatusChanged = selectedStatus !== order.status;
+
+  const handleSave = async () => {
+    if (hasStatusChanged) {
+      await onStatusChange(order._id, selectedStatus);
+    }
+
+    onClose();
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4"
       onClick={onClose}
     >
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-details-title"
-        className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+        className="my-auto w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -42,11 +68,12 @@ export default function OrderDetails({
             <p className="text-sm font-medium text-orange-600">
               Order details
             </p>
+
             <h2
               id="order-details-title"
               className="mt-1 text-xl font-extrabold text-gray-900"
             >
-              {order.id}
+              #{order._id.slice(-6).toUpperCase()}
             </h2>
           </div>
 
@@ -64,24 +91,78 @@ export default function OrderDetails({
           <div>
             <p className="text-sm text-gray-500">Customer</p>
             <p className="mt-1 font-semibold text-gray-900">
-              {order.customer}
+              {order.customerName}
             </p>
-            <p className="mt-1 text-sm text-gray-600">{order.email}</p>
+            <p className="mt-1 text-sm text-gray-600">
+              {order.email}
+            </p>
+            {order.phone && (
+              <p className="mt-1 text-sm text-gray-600">
+                {order.phone}
+              </p>
+            )}
           </div>
+
+          {order.address && (
+            <div>
+              <p className="text-sm text-gray-500">
+                Shipping address
+              </p>
+              <p className="mt-1 text-sm text-gray-800">
+                {order.address}
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500">Order date</p>
               <p className="mt-1 font-semibold text-gray-900">
-                {new Date(`${order.date}T00:00:00`).toLocaleDateString()}
+                {new Date(order.createdAt).toLocaleDateString()}
               </p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Number of items</p>
-              <p className="mt-1 font-semibold text-gray-900">
-                {order.items}
+              <p className="text-sm text-gray-500">
+                Total quantity
               </p>
+              <p className="mt-1 font-semibold text-gray-900">
+                {totalItems}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-3 text-sm font-semibold text-gray-800">
+              Ordered products
+            </p>
+
+            <div className="max-h-48 space-y-3 overflow-y-auto">
+              {order.items.map((item, index) => (
+                <div
+                  key={`${item.productId}-${index}`}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-gray-900">
+                      {item.name}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Quantity: {item.quantity}
+                    </p>
+                  </div>
+
+                  <p className="shrink-0 text-sm font-semibold text-gray-800">
+                    {formatCurrency(item.price * item.quantity)}
+                  </p>
+                </div>
+              ))}
+
+              {order.items.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  No products found for this order.
+                </p>
+              )}
             </div>
           </div>
 
@@ -103,14 +184,14 @@ export default function OrderDetails({
 
             <select
               aria-label="Change order status"
-              value={order.status}
+              value={selectedStatus}
+              disabled={updatingStatus}
               onChange={(event) =>
-                onStatusChange(
-                  order.id,
-                  event.target.value as OrderStatus,
+                setSelectedStatus(
+                  event.target.value as OrderStatus
                 )
               }
-              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+              className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {statuses.map((status) => (
                 <option key={status} value={status}>
@@ -119,21 +200,37 @@ export default function OrderDetails({
               ))}
             </select>
           </div>
-
-          <p className="text-xs text-gray-500">
-            Status changes currently update frontend state only.
-            Connect your backend to save changes permanently.
-          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white transition hover:bg-orange-700"
-        >
-          <Save size={17} />
-          Done
-        </button>
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={updatingStatus}
+            className="flex-1 rounded-xl border border-gray-200 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+          >
+            Close
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleSave()}
+            disabled={updatingStatus || !hasStatusChanged}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {updatingStatus ? (
+              <>
+                <LoaderCircle size={17} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save size={17} />
+                Save status
+              </>
+            )}
+          </button>
+        </div>
       </section>
     </div>
   );

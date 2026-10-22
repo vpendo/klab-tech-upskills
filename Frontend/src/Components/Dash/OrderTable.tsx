@@ -1,3 +1,4 @@
+
 import { Eye } from "lucide-react";
 import OrderStatusBadge from "./OrderStatusBadge";
 
@@ -9,11 +10,20 @@ export type OrderStatus =
   | "Cancelled";
 
 export interface Order {
-  id: string;
-  customer: string;
+  _id: string;
+  customerId: string;
+  customerName: string;
   email: string;
-  date: string;
-  items: number;
+  phone: string;
+  address: string;
+  createdAt: string;
+  items: {
+    productId: string;
+    name: string;
+    price: number;
+    quantity: number;
+    imageUrl: string;
+  }[];
   total: number;
   status: OrderStatus;
 }
@@ -46,23 +56,25 @@ export default function OrderTable({
             <th className="px-5 py-4 font-semibold">Items</th>
             <th className="px-5 py-4 font-semibold">Total</th>
             <th className="px-5 py-4 font-semibold">Status</th>
-            <th className="px-5 py-4 text-right font-semibold">Action</th>
+            <th className="px-5 py-4 text-right font-semibold">
+              Action
+            </th>
           </tr>
         </thead>
 
         <tbody className="divide-y divide-gray-100">
           {orders.map((order) => (
             <tr
-              key={order.id}
+              key={order._id}
               className="transition hover:bg-orange-50/30"
             >
               <td className="px-5 py-4 text-sm font-bold text-gray-900">
-                {order.id}
+                #{order._id.slice(-6).toUpperCase()}
               </td>
 
               <td className="px-5 py-4">
                 <p className="text-sm font-semibold text-gray-800">
-                  {order.customer}
+                  {order.customerName}
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
                   {order.email}
@@ -70,11 +82,14 @@ export default function OrderTable({
               </td>
 
               <td className="px-5 py-4 text-sm text-gray-600">
-                {new Date(`${order.date}T00:00:00`).toLocaleDateString()}
+                {new Date(order.createdAt).toLocaleDateString()}
               </td>
 
               <td className="px-5 py-4 text-sm text-gray-600">
-                {order.items}
+                {order.items.reduce(
+                  (total, item) => total + item.quantity,
+                  0
+                )}
               </td>
 
               <td className="px-5 py-4 text-sm font-semibold text-gray-900">
