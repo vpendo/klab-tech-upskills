@@ -38,12 +38,13 @@ export default function Order() {
   const [error, setError] = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+  // Load all orders for the admin.
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await api.get("/orders");
+      const response = await api.get("/api/orders");
       const data = response.data;
 
       const fetchedOrders: OrderType[] = Array.isArray(data)
@@ -65,6 +66,7 @@ export default function Order() {
     void fetchOrders();
   }, [fetchOrders]);
 
+  // Search and filter orders.
   const filteredOrders = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -81,6 +83,7 @@ export default function Order() {
     });
   }, [orders, search, statusFilter]);
 
+  // Update an order's status.
   const updateOrderStatus = async (
     orderId: string,
     status: OrderStatus
@@ -90,7 +93,7 @@ export default function Order() {
 
     try {
       const response = await api.patch(
-        `/orders/${orderId}/status`,
+        `/api/orders/${orderId}/status`,
         { status }
       );
 

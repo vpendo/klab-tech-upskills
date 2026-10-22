@@ -49,8 +49,17 @@ interface LoggedInUser {
 const formatPrice = (price: number) =>
   `${price.toLocaleString("en-RW")} RWF`;
 
+const isOrderStatus = (status: unknown): status is OrderStatus =>
+  status === "Pending" ||
+  status === "Processing" ||
+  status === "Shipped" ||
+  status === "Delivered" ||
+  status === "Cancelled";
+
 export default function AdminDashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<DashboardOrder[]>([]);
 
@@ -70,12 +79,11 @@ export default function AdminDashboard() {
 
   const navigate = useNavigate();
 
-  // Only allow logged-in admins to access this page.
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
     const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
 
-    if (!savedUser || !token) {
+    if (!token || !savedUser) {
       navigate("/login", { replace: true });
       return;
     }
@@ -93,6 +101,7 @@ export default function AdminDashboard() {
 
       setAdminName(user.name?.trim() || "Admin");
       setAdminEmail(user.email?.trim() || "");
+      setIsAuthorized(true);
     } catch {
       localStorage.removeItem("user");
       localStorage.removeItem("token");
@@ -100,7 +109,6 @@ export default function AdminDashboard() {
     }
   }, [navigate]);
 
-  // Load products and inventory statistics from the backend.
   const loadDashboardProducts = useCallback(async () => {
     setProductsLoading(true);
     setProductsError("");
@@ -123,24 +131,40 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // Load saved customer orders from the backend.
   const loadDashboardOrders = useCallback(async () => {
     setOrdersLoading(true);
     setOrdersError("");
 
     try {
-      const response = await api.get("/orders");
+      // This assumes api's base URL does not already end in /api.
+      const response = await api.get("/api/orders");
       const data = response.data;
 
-      const orderList: DashboardOrder[] = Array.isArray(data)
+      const orderList: unknown[] = Array.isArray(data)
         ? data
-        : Array.isArray(data.orders)
+        : Array.isArray(data?.orders)
           ? data.orders
-          : Array.isArray(data.data)
+          : Array.isArray(data?.data)
             ? data.data
-            : [];
+            : Array.isArray(data?.data?.orders)
+              ? data.data.orders
+              : [];
 
-      setOrders(orderList);
+      const validOrders = orderList.filter(
+        (order): order is Record<string, unknown> =>
+          typeof order === "object" &&
+          order !== null &&
+          typeof (order as Record<string, unknown>)._id === "string" &&
+          isOrderStatus((order as Record<string, unknown>).status)
+      );
+
+      setOrders(
+        validOrders.map((order) => ({
+          _id: order._id as string,
+          total: Number(order.total) || 0,
+          status: order.status as OrderStatus,
+        }))
+      );
     } catch (error) {
       console.error("Failed to load dashboard orders:", error);
       setOrdersError(
@@ -159,8 +183,10 @@ export default function AdminDashboard() {
   }, [loadDashboardProducts, loadDashboardOrders]);
 
   useEffect(() => {
-    refreshDashboard();
-  }, [refreshDashboard]);
+    if (isAuthorized) {
+      refreshDashboard();
+    }
+  }, [isAuthorized, refreshDashboard]);
 
   const lowStockProducts = products
     .filter((product) => product.quantity <= 5)
@@ -178,7 +204,7 @@ export default function AdminDashboard() {
 
   const deliveredOrderValue = orders
     .filter((order) => order.status === "Delivered")
-    .reduce((sum, order) => sum + Number(order.total || 0), 0);
+    .reduce((sum, order) => sum + order.total, 0);
 
   const stats = [
     {
@@ -230,6 +256,17 @@ export default function AdminDashboard() {
     navigate("/login", { replace: true });
   };
 
+  if (!isAuthorized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f8f7f5]">
+        <RefreshCw className="animate-spin text-orange-500" size={30} />
+        <span className="ml-3 text-sm text-gray-600">
+          Checking administrator access...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8f7f5] text-gray-900 lg:flex">
       <AdminSidebar
@@ -263,7 +300,8 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={refreshDashboard}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 font-semibold hover:bg-red-100"
+                disabled={productsLoading || ordersLoading}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 font-semibold hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RefreshCw size={16} />
                 Try again
@@ -343,7 +381,7 @@ export default function AdminDashboard() {
                 <div>
                   <h2 className="font-bold">Low Stock Alert</h2>
                   <p className="mt-1 text-xs text-gray-500">
-                    Products with 5 or fewer items.
+                    Products with 5 or fewer items in the loaded list.
                   </p>
                 </div>
 
@@ -392,7 +430,7 @@ export default function AdminDashboard() {
                       Stock looks good!
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
-                      No products have 5 or fewer items in the loaded list.
+                      No low-stock products were found in the loaded list.
                     </p>
                   </div>
                 )}

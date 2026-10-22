@@ -10,7 +10,6 @@ import {
   Minus,
   Plus,
   ShoppingBag,
-  ShoppingCart,
   Heart,
   Trash2,
   LoaderCircle,
@@ -137,7 +136,7 @@ function Cart() {
     );
   }
 
-  if (cartItems.length === 0) {
+  if (cartError && cartItems.length === 0) {
     return (
       <main className="min-h-[60vh] bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
@@ -153,37 +152,26 @@ function Cart() {
               </div>
 
               <h1 className="mt-6 text-3xl font-bold text-gray-900">
-                {cartError
-                  ? "Unable to load your cart"
-                  : "Your cart is empty"}
+                Unable to load your cart
               </h1>
 
               <p className="mt-3 leading-6 text-gray-500">
-                {cartError
-                  ? "We couldn't retrieve your cart. Please try again."
-                  : "Discover your next favorite outfit at PendoHub."}
+                We couldn't retrieve your cart. Please try again.
               </p>
 
-              {cartError && (
-                <div
-                  role="alert"
-                  className="mt-4 text-sm text-red-600"
-                >
-                  {cartError}
-                </div>
-              )}
+              <div role="alert" className="mt-4 text-sm text-red-600">
+                {cartError}
+              </div>
 
               <div className="mt-7 flex flex-wrap justify-center gap-3">
-                {cartError && (
-                  <button
-                    type="button"
-                    onClick={() => void refreshCart()}
-                    className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50"
-                  >
-                    <RefreshCw size={17} />
-                    Try Again
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => void refreshCart()}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  <RefreshCw size={17} />
+                  Try Again
+                </button>
 
                 <Link
                   to={isCustomerPage ? "/account" : "/shop"}
@@ -201,6 +189,51 @@ function Cart() {
       </main>
     );
   }
+
+  if (cartItems.length === 0) {
+    return (
+      <main className="min-h-[60vh] bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          {navigationLinks}
+
+          <div className="flex min-h-[50vh] items-center justify-center">
+            <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-10">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50">
+                <ShoppingBag
+                  size={36}
+                  className="text-orange-500"
+                />
+              </div>
+
+              <h1 className="mt-6 text-3xl font-bold text-gray-900">
+                Your cart is empty
+              </h1>
+
+              <p className="mt-3 leading-6 text-gray-500">
+                Discover your next favorite outfit at PendoHub.
+              </p>
+
+              <div className="mt-7">
+                <Link
+                  to={isCustomerPage ? "/account" : "/shop"}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-6 py-3 font-semibold text-white transition hover:bg-orange-600"
+                >
+                  {isCustomerPage
+                    ? "Back to Dashboard"
+                    : "Continue Shopping"}
+                  <ArrowRight size={18} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const hasOutOfStockItem = cartItems.some(
+    ({ product }) => product.quantity < 1
+  );
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
@@ -386,9 +419,21 @@ function Cart() {
 
             <Link
               to="/checkout"
-              className="mt-7 block rounded-lg bg-orange-500 px-4 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
+              aria-disabled={hasOutOfStockItem}
+              onClick={(event) => {
+                if (hasOutOfStockItem) {
+                  event.preventDefault();
+                }
+              }}
+              className={`mt-7 block rounded-lg px-4 py-3 text-center font-semibold text-white transition ${
+                hasOutOfStockItem
+                  ? "cursor-not-allowed bg-gray-400"
+                  : "bg-orange-500 hover:bg-orange-600"
+              }`}
             >
-              Proceed to Checkout
+              {hasOutOfStockItem
+                ? "Remove Out-of-Stock Items"
+                : "Proceed to Checkout"}
             </Link>
           </aside>
         </div>

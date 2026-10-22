@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { X, Save, LoaderCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Save, LoaderCircle, AlertCircle } from "lucide-react";
 
 import {
   formatCurrency,
@@ -27,6 +26,7 @@ export default function OrderDetails({
 }: OrderDetailsProps) {
   const [selectedStatus, setSelectedStatus] =
     useState<OrderStatus>(order.status);
+  const [saveError, setSaveError] = useState("");
 
   const statuses: OrderStatus[] = [
     "Pending",
@@ -36,6 +36,11 @@ export default function OrderDetails({
     "Cancelled",
   ];
 
+  useEffect(() => {
+    setSelectedStatus(order.status);
+    setSaveError("");
+  }, [order._id, order.status]);
+
   const totalItems = order.items.reduce(
     (total, item) => total + item.quantity,
     0
@@ -44,11 +49,18 @@ export default function OrderDetails({
   const hasStatusChanged = selectedStatus !== order.status;
 
   const handleSave = async () => {
-    if (hasStatusChanged) {
-      await onStatusChange(order._id, selectedStatus);
-    }
+    if (!hasStatusChanged || updatingStatus) return;
 
-    onClose();
+    setSaveError("");
+
+    try {
+      await onStatusChange(order._id, selectedStatus);
+      onClose();
+    } catch {
+      setSaveError(
+        "Unable to save the order status. Please try again."
+      );
+    }
   };
 
   return (
@@ -80,8 +92,9 @@ export default function OrderDetails({
           <button
             type="button"
             onClick={onClose}
+            disabled={updatingStatus}
             aria-label="Close order details"
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
           >
             <X size={21} />
           </button>
@@ -186,11 +199,12 @@ export default function OrderDetails({
               aria-label="Change order status"
               value={selectedStatus}
               disabled={updatingStatus}
-              onChange={(event) =>
+              onChange={(event) => {
                 setSelectedStatus(
                   event.target.value as OrderStatus
-                )
-              }
+                );
+                setSaveError("");
+              }}
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {statuses.map((status) => (
@@ -200,6 +214,16 @@ export default function OrderDetails({
               ))}
             </select>
           </div>
+
+          {saveError && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700"
+            >
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <p>{saveError}</p>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex gap-3">
