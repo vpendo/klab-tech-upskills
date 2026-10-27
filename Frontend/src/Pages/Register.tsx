@@ -9,11 +9,9 @@ import {
   EyeOff,
   ArrowRight,
 } from "lucide-react";
+import axios from "axios";
+import api from "../services/api";
 import { registerSchema } from "../schemas/auth.schema";
-
-const API_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000"
-).replace(/\/+$/, "");
 
 export default function Register() {
   const navigate = useNavigate();
@@ -32,7 +30,6 @@ export default function Register() {
 
     setError("");
 
-    // Validate the form with Zod
     const result = registerSchema.safeParse({
       name,
       email,
@@ -40,38 +37,31 @@ export default function Register() {
     });
 
     if (!result.success) {
-      setError(result.error.issues[0]?.message || "Please check your details.");
+      setError(
+        result.error.issues[0]?.message ||
+          "Please check your details."
+      );
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(result.data),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          data?.message || "Registration failed. Please try again."
-        );
-      }
+      await api.post("/api/auth/register", result.data);
 
       navigate("/login", {
+        replace: true,
         state: {
           message: "Your account has been created. You can now log in.",
         },
       });
     } catch (err) {
-      if (err instanceof TypeError) {
+      if (axios.isAxiosError(err)) {
         setError(
-          "Unable to connect to the server. Please check your connection and try again."
+          err.response?.data?.message ||
+            (err.response
+              ? "Registration failed. Please check your details and try again."
+              : "Unable to connect to the server. Please check your connection and try again.")
         );
       } else {
         setError(

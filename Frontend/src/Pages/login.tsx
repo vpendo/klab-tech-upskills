@@ -1,11 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import axios from "axios";
+import api from "../services/api";
 import { loginSchema } from "../schemas/auth.schema";
-
-const API_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000"
-).replace(/\/+$/, "");
 
 interface LoggedInUser {
   id?: string;
@@ -52,21 +50,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(result.data),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          data?.message || "Login failed. Please check your details."
-        );
-      }
+      const response = await api.post("/api/auth/login", result.data);
+      const data = response.data;
 
       if (
         !data?.token ||
@@ -98,9 +83,10 @@ const Login = () => {
         navigate("/account", { replace: true });
       }
     } catch (err) {
-      if (err instanceof TypeError) {
+      if (axios.isAxiosError(err)) {
         setError(
-          "Unable to connect to the server. Please check your connection and try again."
+          err.response?.data?.message ||
+            "Unable to connect to the server. Please check your connection and try again."
         );
       } else {
         setError(

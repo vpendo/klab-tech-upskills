@@ -18,10 +18,15 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT) || 5000;
 
-// Allow requests from the React frontend.
+// Allow requests from local and deployed React frontends.
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://pendohub.netlify.app",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -69,7 +74,9 @@ const startServer = async (): Promise<void> => {
 
     app.listen(port, () => {
       console.log(`Pendo Hub server running on port ${port}`);
-      console.log(`Swagger UI: http://localhost:${port}/api-docs`);
+      console.log(
+        `Swagger UI: http://localhost:${port}/api-docs`
+      );
     });
   } catch (error) {
     console.error("Failed to start Pendo Hub server:", error);

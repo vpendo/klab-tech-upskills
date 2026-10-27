@@ -1,12 +1,7 @@
-
-import axios from "axios";
+import api from "./api";
 import type { Product } from "../Types/product";
 
-const API_URL = (
-  import.meta.env.VITE_API_URL || "http://localhost:5000"
-).replace(/\/+$/, "");
-
-const PRODUCT_URL = `${API_URL}/api/products`;
+const PRODUCT_URL = "/api/products";
 
 export interface ProductResponse {
   products: Product[];
@@ -38,18 +33,6 @@ interface ProductStatsResponse {
   averagePrice?: number;
 }
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-
-  if (!token) {
-    throw new Error("Please log in before managing products.");
-  }
-
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-};
-
 const extractProduct = (
   data: ProductDataResponse | Product
 ): Product => {
@@ -63,7 +46,7 @@ const extractProduct = (
 export const getProducts = async (
   params: Record<string, string | number> = {}
 ): Promise<ProductResponse> => {
-  const response = await axios.get<ProductResponse>(PRODUCT_URL, {
+  const response = await api.get<ProductResponse>(PRODUCT_URL, {
     params,
   });
 
@@ -73,7 +56,7 @@ export const getProducts = async (
 export const getProductById = async (
   id: string
 ): Promise<Product> => {
-  const response = await axios.get<ProductDataResponse | Product>(
+  const response = await api.get<ProductDataResponse | Product>(
     `${PRODUCT_URL}/${encodeURIComponent(id)}`
   );
 
@@ -83,12 +66,9 @@ export const getProductById = async (
 export const addProduct = async (
   product: FormData
 ): Promise<Product> => {
-  const response = await axios.post<ProductDataResponse | Product>(
+  const response = await api.post<ProductDataResponse | Product>(
     PRODUCT_URL,
-    product,
-    {
-      headers: getAuthHeaders(),
-    }
+    product
   );
 
   return extractProduct(response.data);
@@ -98,12 +78,9 @@ export const updateProduct = async (
   id: string,
   product: FormData
 ): Promise<Product> => {
-  const response = await axios.put<ProductDataResponse | Product>(
+  const response = await api.put<ProductDataResponse | Product>(
     `${PRODUCT_URL}/${encodeURIComponent(id)}`,
-    product,
-    {
-      headers: getAuthHeaders(),
-    }
+    product
   );
 
   return extractProduct(response.data);
@@ -112,16 +89,11 @@ export const updateProduct = async (
 export const deleteProduct = async (
   id: string
 ): Promise<void> => {
-  await axios.delete(
-    `${PRODUCT_URL}/${encodeURIComponent(id)}`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
+  await api.delete(`${PRODUCT_URL}/${encodeURIComponent(id)}`);
 };
 
 export const getProductStats = async (): Promise<ProductStats> => {
-  const response = await axios.get<ProductStatsResponse>(
+  const response = await api.get<ProductStatsResponse>(
     `${PRODUCT_URL}/stats`
   );
 
